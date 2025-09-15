@@ -2,7 +2,7 @@
 
 This project demonstrates how to programmatically control a **MathWorks RoadRunner** simulation using its **gRPC API** with Python. The included example script (`control_rr.py`) connects to a running RoadRunner instance, loads a scene, and prepares for simulation control.
 
-!(https://www.mathworks.com/help/roadrunner/r2025a/examples/rr_custom_api/xxrr_custom_api_01.png)
+<img width="1919" height="1021" alt="image" src="https://github.com/user-attachments/assets/a616c4e7-63a5-4db3-b29f-3c68355ccc49" />
 
 ## Prerequisites
 
