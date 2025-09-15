@@ -164,14 +164,59 @@ end
 function onImport(fig)
     d = getappdata(fig,'AppData');
     logArea = d.logArea;
-    [f,p] = uigetfile('*.mat','Select driving scenario (.mat) exported from Driving Scenario Designer');
+    
+    [f,p] = uigetfile({'*.osm;*.xodr', 'OpenDRIVE/OpenStreetMap Files (*.osm, *.xodr)'},...
+        'Select Road Network');
+    
     if isequal(f,0)
         appendLog(logArea,'Import canceled.');
         return;
     end
-    appendLog(logArea,['Imported file: ' f]);
-    % If user imported a scenario, you could load and render here. For demo we show a preview only.
-    appendLog(logArea,'(Preview) loaded mock scene for demo purposes.');
+    
+    filePath = fullfile(p, f);
+    appendLog(logArea,['Selected file: ' filePath]);
+    
+    try
+        % Just read the file and show some info - NO ROADRUNNER CONNECTION!
+        appendLog(logArea,'Reading file...');
+        
+        if contains(filePath, '.osm')
+            % Read OSM file
+            fileContent = fileread(filePath);
+            nodeCount = numel(strfind(fileContent, '<node'));
+            wayCount = numel(strfind(fileContent, '<way'));
+            appendLog(logArea,sprintf('OSM file loaded: %d nodes, %d ways', nodeCount, wayCount));
+        else
+            % Read XODR file  
+            fileContent = fileread(filePath);
+            roadCount = numel(strfind(fileContent, '<road'));
+            appendLog(logArea,sprintf('XODR file loaded: %d roads found', roadCount));
+        end
+        
+        % STORE the loaded file path for export
+        setappdata(fig, 'LoadedFile', filePath);
+        appendLog(logArea,'File successfully processed! Ready for export.');
+        
+        % Update the preview with REAL verification
+        ax = d.ax;
+        cla(ax);
+        
+        % Show actual file stats - NOT fake positive messages
+        if contains(filePath, '.osm')
+            statusText = sprintf('✓ VERIFIED OSM Import\nFile: %s\nNodes: %d\nWays: %d\n\nReady for RoadRunner!', ...
+                               f, nodeCount, wayCount);
+        else
+            statusText = sprintf('✓ VERIFIED XODR Import\nFile: %s\nRoads: %d\n\nReady for RoadRunner!', ...
+                               f, roadCount);
+        end
+        
+        text(ax, 0.5, 0.5, statusText, 'HorizontalAlignment', 'center', ...
+             'FontSize', 12, 'Color', [0 0.6 0], 'FontWeight', 'bold');
+        xlim(ax, [0 1]); ylim(ax, [0 1]);
+        
+    catch ME
+        appendLog(logArea,['Error reading file: ' ME.message]);
+    end
 end
 
 function onBatchAdd(fig, assetList)
@@ -192,22 +237,63 @@ function onBatchAdd(fig, assetList)
 end
 
 function onExport(fig)
-    d = getappdata(fig,'AppData'); logArea = d.logArea;
-    appendLog(logArea,'Exporting to RoadRunner (if installed) ...');
+    d = getappdata(fig,'AppData'); 
+    logArea = d.logArea;
+    
+    % Check if we have a loaded file first
+    if ~isappdata(fig, 'LoadedFile')
+        appendLog(logArea,'ERROR: No file imported! Use Import Scenario first.');
+        return;
+    end
+    
+    loadedFilePath = getappdata(fig, 'LoadedFile');
+    appendLog(logArea,['Exporting to RoadRunner: ' loadedFilePath]);
+    
     try
-        % placeholder: real export uses startRoadRunnerForScenario(scenario, projectName)
-        pause(0.6);
-        appendLog(logArea,'Export to RoadRunner successful (placeholder).');
+        % Add Python path and RELOAD module
+        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        if count(py.sys.path, pythonScriptPath) == 0
+            insert(py.sys.path, int64(0), pythonScriptPath);
+        end
+        
+        % SIMPLE reload
+        py.importlib.invalidate_caches();
+        
+        % Call Python export function
+        control_rr = py.importlib.import_module('control_rr');
+        result = control_rr.export_to_roadrunner(loadedFilePath);
+        
+        % Get results
+        isSuccessful = logical(result{1});
+        message = char(result{2});
+        
+        if isSuccessful
+            appendLog(logArea, 'SUCCESS: ' + string(message));
+        else
+            appendLog(logArea, 'FAILED: ' + string(message));
+        end
+        
     catch ME
-        appendLog(logArea,['Export failed: ' ME.message]);
+        appendLog(logArea,['Python Export Error: ' ME.message]);
     end
 end
 
 function onRun(fig)
-    d = getappdata(fig,'AppData'); logArea = d.logArea;
-    appendLog(logArea,'Running RoadRunner (placeholder) ...');
-    pause(0.8);
-    appendLog(logArea,'Run complete. Results saved (placeholder).');
+    d = getappdata(fig,'AppData'); 
+    logArea = d.logArea;
+    appendLog(logArea,'Starting RoadRunner application...');
+    
+    try
+        % The 'roadrunner' command will launch the application if it is not already running.
+        % It will then return a connection object.
+        rrApp = roadrunner();
+        
+        appendLog(logArea,'RoadRunner is running. Now ready to receive API commands.');
+        
+    catch ME
+        appendLog(logArea,['Failed to start RoadRunner: ' ME.message]);
+        appendLog(logArea,'Please ensure RoadRunner is installed.');
+    end
 end
 
 % ---------------------------
