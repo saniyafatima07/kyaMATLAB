@@ -63,8 +63,8 @@ function india_twin_builder_app()
     batchBtn.BackgroundColor = primary; batchBtn.FontColor = white;
 
     % Edit personas button
-    editPersonaBtn = uibutton(leftPanel,'push','Text','Edit driver personas','Position',[20 200 260 40],'FontSize',14);
-    editPersonaBtn.BackgroundColor = accent; editPersonaBtn.FontColor = white;
+    editPersonaBtn = uibutton(leftPanel,'push','Text','Load Scenes','Position',[20 200 260 40],'FontSize',14);
+    editPersonaBtn.ButtonPushedFcn = @(s,e) onEditPersona(fig);
 
     % Log Panel at bottom of leftPanel
     logLeftPanel = uipanel(leftPanel,'Position',[20 20 260 160],'Title','Log','BackgroundColor',panel,'FontSize',16,'FontWeight','bold');
@@ -236,6 +236,42 @@ function onBatchAdd(fig, assetList)
     appendLog(logArea,'Batch add complete (visual mock).');
 end
 
+function onEditPersona(fig)
+    d = getappdata(fig,'AppData'); 
+    logArea = d.logArea;
+    
+    % The scene to load. This is a hardcoded placeholder.
+    sceneName = 'T_Intersection'; 
+    
+    appendLog(logArea,['Calling Python backend to load scene: ' sceneName]);
+    
+    try
+        % Add Python path and RELOAD module
+        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        if count(py.sys.path, pythonScriptPath) == 0
+            insert(py.sys.path, int64(0), pythonScriptPath);
+        end
+        
+        py.importlib.invalidate_caches();
+        
+        % Call the Python function to load the scene
+        control_rr = py.importlib.import_module('control_rr');
+        result = control_rr.load_scene(sceneName);
+        
+        isSuccessful = logical(result{1});
+        message = char(result{2});
+        
+        if isSuccessful
+            appendLog(logArea, 'SUCCESS: ' + string(message));
+        else
+            appendLog(logArea, 'FAILED: ' + string(message));
+        end
+        
+    catch ME
+        appendLog(logArea,['Python Load Scene Error: ' ME.message]);
+    end
+end
+
 function onExport(fig)
     d = getappdata(fig,'AppData'); 
     logArea = d.logArea;
@@ -261,7 +297,7 @@ function onExport(fig)
         
         % Call Python export function
         control_rr = py.importlib.import_module('control_rr');
-        result = control_rr.export_to_roadrunner(loadedFilePath);
+        result = control_rr.export_to_roadrunner(char(loadedFilePath));
         
         % Get results
         isSuccessful = logical(result{1});
@@ -284,15 +320,29 @@ function onRun(fig)
     appendLog(logArea,'Starting RoadRunner application...');
     
     try
-        % The 'roadrunner' command will launch the application if it is not already running.
-        % It will then return a connection object.
-        rrApp = roadrunner();
+        % Add Python path and RELOAD module
+        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        if count(py.sys.path, pythonScriptPath) == 0
+            insert(py.sys.path, int64(0), pythonScriptPath);
+        end
+        py.importlib.invalidate_caches();
+
+        control_rr = py.importlib.import_module('control_rr');
         
-        appendLog(logArea,'RoadRunner is running. Now ready to receive API commands.');
+        % This will launch the specific executable you have.
+        result = control_rr.launch_roadrunner();
         
+        isSuccessful = logical(result{1});
+        message = char(result{2});
+
+        if isSuccessful
+            appendLog(logArea, 'SUCCESS: ' + string(message));
+        else
+            appendLog(logArea, 'FAILED: ' + string(message));
+        end
+
     catch ME
         appendLog(logArea,['Failed to start RoadRunner: ' ME.message]);
-        appendLog(logArea,'Please ensure RoadRunner is installed.');
     end
 end
 

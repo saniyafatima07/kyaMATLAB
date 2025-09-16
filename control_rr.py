@@ -31,40 +31,98 @@ with grpc.insecure_channel(SERVER_ADDRESS) as channel:
     except grpc.RpcError as e:
         print(f"Could not connect or call the API: {e.details()}")
 
-def start_roadrunner():
-    """Start RoadRunner application"""
-    rr_path = r"C:\Program Files\RoadRunner R2025a\bin\win64\RoadRunner.exe"
-    if os.path.exists(rr_path):
-        subprocess.Popen([rr_path])
-        time.sleep(5)  # Wait for startup
-        return True, "RoadRunner started"
-    return False, "RoadRunner executable not found"
-
-def export_to_roadrunner(file_path):
-    """Launch RoadRunner with file - SIMPLE and WORKS"""
-    print(f"Python: Opening {file_path} in RoadRunner")
+def launch_roadrunner():
+    """Start RoadRunner application using subprocess with correct API flags."""
+    print("Python Backend: Launching RoadRunner application...")
     
+    # Use your specific executable name
+    rr_exe_path = r"C:\Program Files\RoadRunner R2025a\bin\win64\AppRoadRunner.exe"
+    project_path = r"C:\ILoveCoding\kyaMATLAB\kyaMATLAB"
+    api_port = "54321"
+    
+    if not os.path.exists(rr_exe_path):
+        return False, "RoadRunner executable not found. Please check the path."
+        
     try:
-
-        possible_paths = [
-            r"C:\Program Files\RoadRunner R2025a\bin\win64\AppRoadRunner.exe",
-            r"C:\Program Files (x86)\RoadRunner R2025a\bin\win64\AppRoadRunner.exe",
-        ]
+        # We use Popen with the correct command-line arguments found by you.
+        # This will launch the GUI and start the gRPC server.
+        subprocess.Popen([rr_exe_path, "--projectPath", project_path, "--apiPort", api_port])
         
-        rr_path = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                rr_path = path
-                break
+        # Give the application time to start up and listen for gRPC calls
+        time.sleep(10)
         
-        if rr_path:
-            subprocess.Popen([rr_path, file_path])
-            return True, f"SUCCESS: RoadRunner launched with {os.path.basename(file_path)}"
-        else:
-            return False, f"RoadRunner not found. Check installation at: {possible_paths[0]}"
-            
+        return True, "RoadRunner launched successfully."
+        
     except Exception as e:
         return False, f"Launch error: {str(e)}"
 
-# Only export function - assumes RoadRunner already running
-__all__ = ['export_to_roadrunner']
+
+
+def load_scene(scene_name):
+    """
+    Loads a pre-existing RoadRunner scene.
+
+    Args:
+        scene_name (str): The name of the scene to load (e.g., 'Urban Canyon').
+
+    Returns:
+        tuple: (bool, str) - A tuple indicating success and a message.
+    """
+    print(f"Python Backend: Connecting to RoadRunner to load scene '{scene_name}'")
+
+    try:
+        with grpc.insecure_channel(SERVER_ADDRESS) as channel:
+            api = roadrunner_service_pb2_grpc.RoadRunnerServiceStub(channel)
+
+            load_request = roadrunner_service_messages_pb2.LoadSceneRequest()
+            load_request.file_path = scene_name
+
+            response = api.LoadScene(load_request)
+
+            if response.status_code == 0:
+                return True, f"SUCCESS: Scene '{scene_name}' loaded."
+            else:
+                return False, f"RoadRunner API Error: {response.message}"
+    except grpc.RpcError as e:
+        return False, f"gRPC Connection Error: {e.details()}"
+    except Exception as e:
+        return False, f"General Python Error: {str(e)}"
+
+def export_to_roadrunner(file_path):
+    """
+    Imports a road network file into a currently running RoadRunner instance.
+    This function uses the gRPC API for communication.
+    
+    Args:
+        file_path (str): The full path to the .osm or .xodr file.
+
+    Returns:
+        tuple: (bool, str) - A tuple indicating success and a message.
+    """
+    print(f"Python Backend: Connecting to RoadRunner at {SERVER_ADDRESS} to import file...")
+
+    try:
+        # Establish an insecure gRPC channel to the RoadRunner server
+        with grpc.insecure_channel(SERVER_ADDRESS) as channel:
+            # Create a gRPC client stub
+            api = roadrunner_service_pb2_grpc.RoadRunnerServiceStub(channel)
+
+            # Create an ImportRoadNetworkRequest message
+            import_request = roadrunner_service_messages_pb2.ImportRoadNetworkRequest()
+            import_request.file_path = file_path
+            
+            # Send the request to RoadRunner
+            response = api.ImportRoadNetwork(import_request)
+
+            # The response message contains a success/failure status and a message
+            if response.status_code == 0:
+                return True, f"SUCCESS: '{os.path.basename(file_path)}' imported."
+            else:
+                return False, f"RoadRunner API Error: {response.message}"
+                
+    except grpc.RpcError as e:
+        return False, f"gRPC Connection Error: {e.details()}"
+    except Exception as e:
+        return False, f"General Python Error: {str(e)}"
+    
+__all__ = ['export_to_roadrunner', 'launch_roadrunner', 'load_scene']
