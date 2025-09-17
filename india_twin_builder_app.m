@@ -12,7 +12,7 @@ function india_twin_builder_app()
     accent  = hex2rgb('#1E62D0');    % accent button
     white   = [1 1 1];
     grayTxt = hex2rgb('#A3B2CC');
-    mapBeige = hex2rgb('#EBD7A4');
+    mapBg   = hex2rgb('#213753');    % NEW: Blueish background for map
     
     % ---------------------------
     % Get Screen Size for dynamic layout
@@ -24,7 +24,7 @@ function india_twin_builder_app()
     % ---------------------------
     % Create UIFigure (Full-screen)
     % ---------------------------
-    fig = uifigure('Name','BLAH BLAH', ...
+    fig = uifigure('Name','SimuTwin', ...
                    'Position',[1 1 figW figH], ...
                    'Color', bg, 'Resize', 'off');
 
@@ -34,7 +34,7 @@ function india_twin_builder_app()
                        'BackgroundColor', panel, 'BorderType', 'none');
 
     % Title label centered
-    titleLabel = uilabel(topPanel, 'Text', 'BLAH BLAH', ...
+    titleLabel = uilabel(topPanel, 'Text', '‍SimuTwin', ...
         'Position', [0 18 figW 60], 'HorizontalAlignment', 'center', ...
         'FontSize', 30, 'FontWeight', 'bold', 'FontColor', white, 'BackgroundColor', panel);
 
@@ -62,28 +62,28 @@ function india_twin_builder_app()
     % ---------------------------
     % Import button
     importBtn = uibutton(leftPanel, 'push', 'Text', 'Import map', ...
-        'Position', [20 panelH-84 260 64], 'FontSize', 20, 'FontWeight', 'bold');
+        'Position', [20 panelH-84 260 64], 'FontSize', 20, 'FontWeight', 'normal');
     importBtn.BackgroundColor = primary; importBtn.FontColor = white;
+    
+    % --- BEGIN ASSET UI ---
+    addAssetBtn = uibutton(leftPanel, 'push', 'Text', 'Add Asset', ...
+        'Position', [20 panelH-168 260 64], 'FontSize', 20, 'FontWeight', 'normal');
+    addAssetBtn.BackgroundColor = primary; addAssetBtn.FontColor = white;
 
-    % Assets titled box (Panel with Title)
-    assetsPanel = uipanel(leftPanel, 'Position', [20 panelH-280 260 160], 'Title', 'Assets', 'BackgroundColor', panel, ...
-        'TitlePosition', 'lefttop', 'FontSize', 18, 'FontWeight', 'bold');
-    assetList = uilistbox(assetsPanel, 'Position', [8 8 244 120], ...
-        'Items', {'Pothole','Barricade','Vendor Stall','Rickshaw','Partial Lane Closure'}, ...
+    lblAssets = uilabel(leftPanel, 'Text', 'Select an Asset', ...
+        'Position', [20 panelH-210 260 22], 'FontSize', 16, 'FontColor', white);
+    
+    assetList = uilistbox(leftPanel, ...
+        'Position', [20 panelH-400 260 180], ...
+        'Items', {'Pothole','Barricade','Rickshaw','Car', 'Road'}, ...
         'FontSize', 16, 'FontColor', white);
     assetList.BackgroundColor = hex2rgb('#213753');
+    assetList.ValueChangedFcn = @(s,e) onAssetSelected(fig, e);
+    % --- END ASSET UI ---
 
-    % Add asset label + numeric edit + batch add button
-    lblAdd = uilabel(leftPanel, 'Text', 'Add asset', 'Position', [20 panelH-320 120 24], 'FontSize', 14, 'FontColor', white);
-    addCount = uieditfield(leftPanel, 'numeric', 'Position', [140 panelH-320 120 28], 'Value', 1);
-
-    batchBtn = uibutton(leftPanel, 'push', 'Text', 'Batch add', 'Position', [20 panelH-370 260 44], 'FontSize', 16);
-    batchBtn.BackgroundColor = primary; batchBtn.FontColor = white;
-    
     % Load Scene Dropdown
-    % -- UPDATED COLOR --
-    lblScenes = uilabel(leftPanel, 'Text', 'Load Scene', 'Position', [20 panelH-400 120 22], 'FontSize', 16, 'FontColor', white);
-    ddScenes = uidropdown(leftPanel, 'Position', [20 panelH-440 260 36], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', white);
+    lblScenes = uilabel(leftPanel, 'Text', 'Load Scene', 'Position', [20 panelH-440 260 22], 'FontSize', 16, 'FontColor', white);
+    ddScenes = uidropdown(leftPanel, 'Position', [20 panelH-480 260 36], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', white);
     ddScenes.ValueChangedFcn = @(s,e) onSceneSelected(fig, e);
 
     % Log Panel at bottom of leftPanel
@@ -93,22 +93,34 @@ function india_twin_builder_app()
     % ---------------------------
     % CENTER Panel content
     % ---------------------------
-    pvLabel = uilabel(centerPanel, 'Text', 'Preview', 'Position', [18 panelH-50 200 36], 'FontSize', 22, 'FontWeight', 'bold', 'FontColor', white);
-
-    % UIAxes for preview
-    bottomH = 80;
-    axesH = panelH - 50 - 36 - 20 - bottomH - 18;
-    ax = uiaxes(centerPanel, 'Position', [18 18+bottomH centerW-36 axesH], 'BackgroundColor', mapBeige);
-    ax.XTick = []; ax.YTick = []; ax.Box = 'on';
-    % Draw the mock road map once
-    drawMockMap(ax);
-
-    % Add a bottom center log area (two columns look)
-    centerBottomLeft = uipanel(centerPanel, 'Position', [18 18 (centerW-36)/2 - 6 bottomH], 'BackgroundColor', hex2rgb('#213753'));
-    centerBottomRight = uipanel(centerPanel, 'Position', [18 + (centerW-36)/2 + 6 18 (centerW-36)/2 - 6 bottomH], 'BackgroundColor', hex2rgb('#213753'));
-    lblCenterLogL = uilabel(centerBottomLeft, 'Text', '[10:17:23] Scene loaded', 'Position', [8 8 (centerW-36)/2 - 6 24], 'FontColor', white);
-    lblCenterLogR = uilabel(centerBottomRight, 'Text', '[10:17:25] Export to RoadRunner successful', 'Position', [8 8 (centerW-36)/2 - 6 24], 'FontColor', white);
+    % --- Preview Heading and Axes ---
+    pvLabel = uilabel(centerPanel, 'Text', 'Preview', ...
+        'Position', [18 panelH-50 200 36], 'FontSize', 22, 'FontWeight', 'bold', 'FontColor', white);
     
+    axesH = panelH - 50 - 36 - 20 - 150 - 18;
+    ax = uiaxes(centerPanel, 'Position', [18 18+150 centerW-36 axesH], 'BackgroundColor', mapBg);
+    ax.XTick = []; ax.YTick = []; ax.Box = 'on';
+
+    % Initial preview content
+    cla(ax);
+    text(ax, 0.5, 0.5, 'Run RoadRunner to begin', 'HorizontalAlignment', 'center', ...
+         'FontSize', 24, 'FontWeight', 'bold', 'Color', grayTxt);
+    ax.XLim = [0 1]; ax.YLim = [0 1];
+    axis(ax, 'off');
+    
+    % Asset table at bottom of center panel
+    assetTablePanel = uipanel(centerPanel, 'Position', [18 18 centerW-36 150], ...
+                              'BackgroundColor', hex2rgb('#213753'), 'Title', 'Assets Added', ...
+                              'FontWeight', 'bold', 'FontSize', 14);
+    
+    assetTable = uitable(assetTablePanel, 'Position', [10 10 centerW-56 120], ...
+                         'ColumnName', {'Asset', 'Property 1', 'Property 2'}, ...
+                         'ColumnFormat', {'char', 'char', 'char'}, ...
+                         'ColumnWidth', {'auto', 'auto', 'auto'}, ...
+                         'RowName', {}, 'Data', []);
+    assetTable.BackgroundColor = hex2rgb('#15294C');
+    assetTable.ForegroundColor = white;
+
     % ---------------------------
     % RIGHT Panel content
     % ---------------------------
@@ -122,36 +134,49 @@ function india_twin_builder_app()
 
     lblFidelity = uilabel(rightPanel, 'Text', 'Fidelity', 'Position', [20 panelH-246 120 22], 'FontSize', 16, 'FontColor', white);
     ddFidelity = uidropdown(rightPanel, 'Items', {'Kinematic','Dynamics'}, 'Value', 'Kinematic', 'Position', [20 panelH-286 220 36]);
+    
+    % New Sections for future use
+    lblSettings = uilabel(rightPanel, 'Text', 'Settings', 'Position', [20 panelH-324 120 22], 'FontSize', 16, 'FontColor', white);
+    settingsPanel = uipanel(rightPanel, 'Position', [20 panelH-390 220 60], 'BackgroundColor', hex2rgb('#213753'), 'BorderType', 'none');
+    % -- UI and label change as requested --
+    settingsBtn = uibutton(settingsPanel, 'push', 'Text', 'Project Settings', 'Position', [10 10 200 40], ...
+        'ButtonPushedFcn', @(s,e) appendLog(logArea, 'Project Settings button pressed. (Non-functional)'));
+    settingsBtn.BackgroundColor = accent; settingsBtn.FontColor = white;
 
-    lblDensity = uilabel(rightPanel, 'Text', 'Asset density', 'Position', [20 panelH-324 120 22], 'FontSize', 16, 'FontColor', white);
-    sldDensity = uislider(rightPanel, 'Position', [20 panelH-340 220 3]); sldDensity.Value = 0.5;
+    lblBatch = uilabel(rightPanel, 'Text', 'Batch Operations', 'Position', [20 panelH-420 200 22], 'FontSize', 16, 'FontColor', white);
+    batchPanel = uipanel(rightPanel, 'Position', [20 panelH-490 220 60], 'BackgroundColor', hex2rgb('#213753'), 'BorderType', 'none');
+    % -- UI and label change as requested --
+    batchBtn = uibutton(batchPanel, 'push', 'Text', 'Batch Export', 'Position', [10 10 200 40], ...
+        'ButtonPushedFcn', @(s,e) appendLog(logArea, 'Batch Export button pressed. (Non-functional)'));
+    batchBtn.BackgroundColor = accent; batchBtn.FontColor = white;
 
-    expBtn = uibutton(rightPanel, 'push', 'Text', 'Export to RoadRunner', 'Position', [20 panelH-438 220 48], 'FontSize', 17);
+    expBtn = uibutton(rightPanel, 'push', 'Text', 'Export to RoadRunner', 'Position', [20 112 220 48], 'FontSize', 17);
     expBtn.BackgroundColor = primary; expBtn.FontColor = white;
 
-    runBtn = uibutton(rightPanel, 'push', 'Text', 'Run RoadRunner', 'Position', [20 panelH-508 220 48], 'FontSize', 17);
+    runBtn = uibutton(rightPanel, 'push', 'Text', 'Run RoadRunner', 'Position', [20 42 220 48], 'FontSize', 17);
     runBtn.BackgroundColor = primary; runBtn.FontColor = white;
-
-    dlBtn = uibutton(rightPanel, 'push', 'Text', 'Download results', 'Position', [20 42 220 48], 'FontSize', 17);
-    dlBtn.BackgroundColor = primary; dlBtn.FontColor = white;
 
     % ---------------------------
     % Attach callbacks
     % ---------------------------
     % store handles in appdata
-    appdata.ax = ax; appdata.logArea = logArea; appdata.centerLeftLabel = lblCenterLogL; appdata.centerRightLabel = lblCenterLogR;
+    appdata.ax = ax; 
+    appdata.logArea = logArea; 
+    appdata.assetTable = assetTable;
+    appdata.Assets = {}; 
+    appdata.RoadData = []; % Initializing RoadData in appdata
+    appdata.LoadedFile = ''; % Initializing LoadedFile in appdata
+    appdata.mapBg = mapBg;
     setappdata(fig, 'AppData', appdata);
 
     importBtn.ButtonPushedFcn = @(s,e) onImport(fig);
-    batchBtn.ButtonPushedFcn  = @(s,e) onBatchAdd(fig, assetList);
+    addAssetBtn.ButtonPushedFcn = @(s,e) onAddAsset(fig, assetList);
     expBtn.ButtonPushedFcn    = @(s,e) onExport(fig);
     runBtn.ButtonPushedFcn    = @(s,e) onRun(fig);
-    % Note: No onDownload function provided
-
+    
     % Final UI setup and log update
     appendLog(logArea, 'UI ready. Use Import scenario or Batch add to populate preview.');
     
-    % This block populates the scenes dropdown and MUST be after logArea is created
     try
         scenesFolder = fullfile(pwd, 'Scenes');
         if ~isfolder(scenesFolder)
@@ -167,7 +192,7 @@ function india_twin_builder_app()
                 ddScenes.Enable = 'off';
             else
                 ddScenes.Items = fileNames;
-                ddScenes.Value = fileNames{1}; % Set initial value
+                ddScenes.Value = fileNames{1};
                 appendLog(logArea, sprintf('Found %d scene files. Ready to load.', numel(fileNames)));
             end
         end
@@ -179,56 +204,264 @@ function india_twin_builder_app()
 end
 
 % ---------------------------
-% helper: draw mock map and icons in axes
+% NEW CALLBACK FOR ASSETS
 % ---------------------------
-function drawMockMap(ax)
-    cla(ax); hold(ax, 'on'); axis(ax, 'off'); % no axes ticks
-    % draw beige background (already set)
-    % draw some roads as thick lines
-    lw = 38;
-    plot(ax, [0.1 0.9], [0.55 0.55], 'Color', [0.93 0.82 0.6], 'LineWidth', lw); % horizontal
-    plot(ax, [0.35 0.35], [0.15 0.85], 'Color', [0.93 0.82 0.6], 'LineWidth', lw); % vertical
-    plot(ax, [0.15 0.85], [0.25 0.75], 'Color', [0.93 0.82 0.6], 'LineWidth', lw); % diagonal
-    % draw roundabout
-    rectangle(ax, 'Position', [0.62 0.12 0.14 0.14], 'Curvature', [1 1], 'FaceColor', [0.70 0.88 0.64], 'EdgeColor', [0.78 0.78 0.65]);
-    % draw small asset icons as colored rectangles/circles
-    scatter(ax, 0.65, 0.65, 900, [0.0 0.64 0.42], 'o', 'filled'); % rickshaw-green
-    scatter(ax, 0.4, 0.35, 700, [0.2 0.2 0.2], 's', 'filled'); % car
-    scatter(ax, 0.25, 0.45, 500, [0.95 0.6 0.26], 'd', 'filled'); % cone/barrier
-    scatter(ax, 0.5, 0.25, 300, [0.1 0.1 0.1], 'o', 'filled'); % small car
-    % add little pothole blobs (dark smudges)
-    for k = 1:4
-        xp = 0.3 + 0.12*rand; yp = 0.4 + 0.18*rand;
-        patch(ax, xp + 0.02*randn(1,6), yp + 0.015*randn(1,6), [0.25 0.22 0.22], 'EdgeColor', 'none');
+function onAssetSelected(fig, event)
+    appdata = getappdata(fig, 'AppData');
+    logArea = appdata.logArea;
+    assetType = event.Value;
+    
+    appendLog(logArea, ['Selected asset type: ' assetType]);
+    
+    popFig = uifigure('Name', ['Configure ' assetType], 'Position', [0 0 400 300], 'Visible', 'off');
+    centerfig(popFig);
+
+    delete(popFig.Children);
+    
+    popPanel = uipanel(popFig, 'Position', [10 10 380 280], 'BorderType', 'none', 'BackgroundColor', hex2rgb('#15294C'));
+    
+    switch assetType
+        case 'Pothole'
+            lbl1 = uilabel(popPanel, 'Text', 'Vehicle Type:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef1 = uieditfield(popPanel, 'text', 'Position', [140 220 200 28]);
+            lbl2 = uilabel(popPanel, 'Text', 'Hole Width:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef2 = uieditfield(popPanel, 'numeric', 'Position', [140 180 200 28]);
+            lbl3 = uilabel(popPanel, 'Text', 'Area:', 'Position', [20 140 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef3 = uieditfield(popPanel, 'numeric', 'Position', [140 140 200 28]);
+            
+            applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, ef2, ef3);
+
+        case 'Barricade'
+            lbl1 = uilabel(popPanel, 'Text', 'Type:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            dd1 = uidropdown(popPanel, 'Items', {'Single', 'Multiple'}, 'Position', [140 220 200 28]);
+            lbl2 = uilabel(popPanel, 'Text', 'Distance:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef2 = uieditfield(popPanel, 'numeric', 'Position', [140 180 200 28]);
+            
+            applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, dd1, ef2);
+            
+        case {'Rickshaw', 'Car'}
+            lbl1 = uilabel(popPanel, 'Text', 'Vehicle Count:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef1 = uieditfield(popPanel, 'numeric', 'Position', [140 220 200 28]);
+            lbl2 = uilabel(popPanel, 'Text', 'Vehicle Color:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            dd1 = uidropdown(popPanel, 'Items', {'Red', 'Blue', 'Green'}, 'Position', [140 180 200 28]);
+
+            applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, dd1);
+
+        case 'Road'
+            lbl1 = uilabel(popPanel, 'Text', 'Road Width:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef1 = uieditfield(popPanel, 'numeric', 'Position', [140 220 200 28]);
+            lbl2 = uilabel(popPanel, 'Text', 'Number of Lanes:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef2 = uieditfield(popPanel, 'numeric', 'Position', [140 180 200 28]);
+
+            applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, ef2);
     end
-    % scale axes to 0..1 for consistent layout
-    xlim(ax, [0 1]); ylim(ax, [0 1]);
-    hold(ax, 'off');
+    
+    popFig.Visible = 'on';
 end
+
+% Helper function to center a figure
+function centerfig(fig)
+    scr_sz = get(0, 'ScreenSize');
+    fig_pos = fig.Position;
+    fig_pos(1) = scr_sz(3)/2 - fig_pos(3)/2;
+    fig_pos(2) = scr_sz(4)/2 - fig_pos(4)/2;
+    fig.Position = fig_pos;
+end
+
+function onApply_AddAsset(mainFig, popFig, assetType, varargin)
+    % Added try-catch for robustness without changing functionality
+    try
+        appdata = getappdata(mainFig, 'AppData');
+        logArea = appdata.logArea;
+        assetTable = appdata.assetTable;
+        
+        appendLog(logArea, ['--- Asset added: ' assetType ' ---']);
+        
+        % Fetch properties from pop-up and display in table
+        property1 = 'N/A';
+        property2 = 'N/A';
+        
+        % Store all properties in a struct
+        assetData = struct('Type', assetType, 'x', [], 'y', []);
+        
+        switch assetType
+            case 'Pothole'
+                vehicleType = varargin{1}.Value;
+                holeWidth = varargin{2}.Value;
+                area = varargin{3}.Value;
+                
+                assetData.Properties = struct('VehicleType', vehicleType, 'HoleWidth', holeWidth, 'Area', area);
+                
+                property1 = sprintf('Width: %.2f', holeWidth);
+                property2 = sprintf('Area: %.2f', area);
+                
+            case 'Barricade'
+                barricadeType = varargin{1}.Value;
+                distance = varargin{2}.Value;
+                
+                assetData.Properties = struct('BarricadeType', barricadeType, 'Distance', distance);
+                
+                property1 = ['Type: ' barricadeType];
+                property2 = sprintf('Distance: %.2f', distance);
+                
+            case {'Rickshaw', 'Car'}
+                vehicleCount = varargin{1}.Value;
+                vehicleColor = varargin{2}.Value;
+
+                assetData.Properties = struct('Count', vehicleCount, 'Color', vehicleColor);
+                
+                property1 = sprintf('Count: %d', vehicleCount);
+                property2 = ['Color: ' vehicleColor];
+            
+            case 'Road'
+                roadWidth = varargin{1}.Value;
+                numLanes = varargin{2}.Value;
+                
+                assetData.Properties = struct('Width', roadWidth, 'Lanes', numLanes);
+                
+                property1 = sprintf('Width: %.2f', roadWidth);
+                property2 = sprintf('Lanes: %d', numLanes);
+        end
+        
+        % Generate random coordinates and add to assetData
+        if isfield(appdata, 'RoadData') && ~isempty(appdata.RoadData) && ~isempty(appdata.RoadData.x)
+            roadData = appdata.RoadData;
+            
+            % Flatten the cell array of road data to find bounds for a random point
+            all_x_flat = vertcat(roadData.x{:});
+            all_y_flat = vertcat(roadData.y{:});
+            
+            if ~isempty(all_x_flat)
+                min_x = min(all_x_flat);
+                max_x = max(all_x_flat);
+                min_y = min(all_y_flat);
+                max_y = max(all_y_flat);
+                
+                assetData.x = min_x + (max_x - min_x) * rand;
+                assetData.y = min_y + (max_y - min_y) * rand;
+            else
+                assetData.x = rand;
+                assetData.y = rand;
+            end
+        else
+            assetData.x = rand;
+            assetData.y = rand;
+        end
+        
+        % Append new asset to the appdata
+        appdata.Assets{end+1} = assetData;
+        setappdata(mainFig, 'AppData', appdata);
+
+        % Update table
+        currentData = assetTable.Data;
+        newData = {assetType, property1, property2};
+        
+        % --- New Debugging Code ---
+        disp('[DEBUG] Attempting to update table.');
+        disp(['[DEBUG] Current table data is of size: ' num2str(size(currentData))]);
+        disp(['[DEBUG] New row data to add: ' strjoin(string(newData))]);
+        
+        if isempty(currentData)
+            assetTable.Data = newData;
+        else
+            assetTable.Data = [currentData; newData];
+        end
+        
+        % Update the preview
+        updatePreview(mainFig);
+        
+        appendLog(logArea, '-----------------------------');
+        delete(popFig);
+
+    catch ME
+        appendLog(appdata.logArea, ['ERROR: Apply button failed. ' ME.message]);
+        delete(popFig);
+    end
+end
+
+% NEW FUNCTION: Handles all preview updates in one place
+function updatePreview(fig)
+    appdata = getappdata(fig, 'AppData');
+    ax = appdata.ax;
+    
+    cla(ax);
+    
+    if isfield(appdata, 'RoadData') && ~isempty(appdata.RoadData)
+        % Redraw the imported map
+        roadData = appdata.RoadData;
+        
+        hold(ax, 'on');
+        all_x = cell2mat(roadData.x);
+        all_y = cell2mat(roadData.y);
+        
+        min_x = min(all_x); max_x = max(all_x);
+        min_y = min(all_y); max_y = max(all_y);
+        
+        pad = 0.05 * max([max_x - min_x, max_y - min_y]);
+        if pad == 0, pad = 10; end
+        
+        ax.XLim = [min_x - pad, max_x + pad];
+        ax.YLim = [min_y - pad, max_y + pad];
+        
+        for i = 1:numel(roadData.x)
+            plot(ax, roadData.x{i}, roadData.y{i}, 'Color', hex2rgb('#3A4E6C'), 'LineWidth', 15);
+            plot(ax, roadData.x{i}, roadData.y{i}, '--', 'Color', hex2rgb('#A3B2CC'), 'LineWidth', 2);
+        end
+        
+        % Plot all existing assets from the appdata struct
+        for i = 1:numel(appdata.Assets)
+            asset = appdata.Assets{i};
+            plot(ax, asset.x, asset.y, 'o', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r', 'MarkerSize', 10);
+            text(ax, asset.x, asset.y, asset.Type, 'Color', 'r', 'FontSize', 12, 'VerticalAlignment', 'bottom');
+        end
+        
+        hold(ax, 'off');
+        axis(ax, 'equal');
+        axis(ax, 'off');
+        
+    else
+        % No map loaded, show default message
+        text(ax, 0.5, 0.5, 'Run RoadRunner to begin', 'HorizontalAlignment', 'center', ...
+             'FontSize', 24, 'FontWeight', 'bold', 'Color', appdata.mapBg);
+        ax.XLim = [0 1]; ax.YLim = [0 1];
+        axis(ax, 'off');
+    end
+    
+    drawnow;
+end
+
 
 % ---------------------------
 % Callbacks (simple, safe)
 % ---------------------------
 function onSceneSelected(fig, event)
-    d = getappdata(fig, 'AppData');
-    logArea = d.logArea;
+    appdata = getappdata(fig, 'AppData');
+    logArea = appdata.logArea;
+    ax = appdata.ax;
     
-    % The selected value from the dropdown is in event.Value
     selectedSceneFile = event.Value;
     
+    cla(ax);
+    text(ax, 0.5, 0.5, 'Loading Scene...', 'HorizontalAlignment', 'center', ...
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+    axis(ax, 'off');
+    ax.XLim = [0 1]; ax.YLim = [0 1];
+    drawnow;
+
     if isequal(selectedSceneFile, 'No scenes found')
         appendLog(logArea, 'No scene selected. Aborting.');
         return;
     end
     
-    % Construct the full file path
-    scenesFolder = fullfile(pwd, 'Scenes');
-    scenePath = fullfile(scenesFolder, selectedSceneFile);
+    scenePath = fullfile(pwd, 'Scenes', selectedSceneFile);
     
     appendLog(logArea, ['Calling Python backend to load scene: ' selectedSceneFile]);
     
     try
-        % Add Python path and RELOAD module
         pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
@@ -236,151 +469,239 @@ function onSceneSelected(fig, event)
         
         py.importlib.invalidate_caches();
         
-        % Call the Python function, passing the full file path
         control_rr = py.importlib.import_module('control_rr');
         result = control_rr.load_scene_from_file(scenePath);
         
         isSuccessful = logical(result{1});
         message = char(result{2});
         
-        if isSuccessful
-            appendLog(logArea, 'SUCCESS: ' + string(message));
-        else
-            appendLog(logArea, 'FAILED: ' + string(message));
-        end
+        appendLog(logArea, 'SUCCESS: Scene loaded and processed.');
+        cla(ax);
+        text(ax, 0.5, 0.5, 'Scene Loaded!', 'HorizontalAlignment', 'center', ...
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#3CCF4E'));
+        axis(ax, 'off');
+        ax.XLim = [0 1]; ax.YLim = [0 1];
         
     catch ME
         appendLog(logArea, ['Python Load Scene Error: ' ME.message]);
+        cla(ax);
+        text(ax, 0.5, 0.5, 'An error occurred.', 'HorizontalAlignment', 'center', ...
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#E03C32'));
+        axis(ax, 'off');
+        ax.XLim = [0 1]; ax.YLim = [0 1];
     end
 end
 
 function onImport(fig)
-    d = getappdata(fig, 'AppData');
-    logArea = d.logArea;
+    appdata = getappdata(fig, 'AppData');
+    logArea = appdata.logArea;
+    ax = appdata.ax;
     
+    cla(ax);
+    text(ax, 0.5, 0.5, 'Waiting for file selection...', 'HorizontalAlignment', 'center', ...
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+    axis(ax, 'off');
+    ax.XLim = [0 1]; ax.YLim = [0 1];
+    drawnow;
+    appendLog(logArea, 'Importing new map. Select a file.');
+
     [f,p] = uigetfile({'*.osm;*.xodr', 'OpenDRIVE/OpenStreetMap Files (*.osm, *.xodr)'}, ...
         'Select Road Network');
     
     if isequal(f, 0)
         appendLog(logArea, 'Import canceled.');
+        cla(ax);
+        text(ax, 0.5, 0.5, 'Import canceled.', 'HorizontalAlignment', 'center', ...
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+        axis(ax, 'off');
+        ax.XLim = [0 1]; ax.YLim = [0 1];
         return;
     end
     
     filePath = fullfile(p, f);
     appendLog(logArea, ['Selected file: ' filePath]);
+    disp(['[DEBUG] File Path after import: ' filePath]); % DEBUG
     
     try
-        % Just read the file and show some info - NO ROADRUNNER CONNECTION!
         appendLog(logArea, 'Reading file...');
-        
-        if contains(filePath, '.osm')
-            % Read OSM file
-            fileContent = fileread(filePath);
-            nodeCount = numel(strfind(fileContent, '<node'));
-            wayCount = numel(strfind(fileContent, '<way'));
-            appendLog(logArea, sprintf('OSM file loaded: %d nodes, %d ways', nodeCount, wayCount));
-        else
-            % Read XODR file 
-            fileContent = fileread(filePath);
-            roadCount = numel(strfind(fileContent, '<road'));
-            appendLog(logArea, sprintf('XODR file loaded: %d roads found', roadCount));
-        end
-        
-        % STORE the loaded file path for export
-        setappdata(fig, 'LoadedFile', filePath);
-        appendLog(logArea, 'File successfully processed! Ready for export.');
-        
-        % Update the preview with REAL verification
-        ax = d.ax;
         cla(ax);
+        text(ax, 0.5, 0.5, 'Parsing Map Data...', 'HorizontalAlignment', 'center', ...
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+        axis(ax, 'off');
+        ax.XLim = [0 1]; ax.YLim = [0 1];
+        drawnow;
         
-        % Show actual file stats - NOT fake positive messages
-        if contains(filePath, '.osm')
-            statusText = sprintf('✓ VERIFIED OSM Import\nFile: %s\nNodes: %d\nWays: %d\n\nReady for RoadRunner!', ...
-                f, nodeCount, wayCount);
+        [~, ~, ext] = fileparts(filePath);
+        roadData = [];
+        
+        if strcmpi(ext, '.osm')
+            xdoc = xmlread(filePath);
+            nodes = xdoc.getElementsByTagName('node');
+            ways = xdoc.getElementsByTagName('way');
+            
+            lat_lon_map = containers.Map;
+            for i = 0:nodes.getLength-1
+                node = nodes.item(i);
+                id = char(node.getAttribute('id'));
+                lat = str2double(node.getAttribute('lat'));
+                lon = str2double(node.getAttribute('lon'));
+                lat_lon_map(id) = [lat, lon];
+            end
+            
+            roadData.x = {};
+            roadData.y = {};
+            for i = 0:ways.getLength-1
+                way = ways.item(i);
+                nd_refs = way.getElementsByTagName('nd');
+                x_pts = []; y_pts = [];
+                for j = 0:nd_refs.getLength-1
+                    nd_ref = nd_refs.item(j);
+                    node_id = char(nd_ref.getAttribute('ref'));
+                    if isKey(lat_lon_map, node_id)
+                        lat_lon = lat_lon_map(node_id);
+                        [x, y] = deg2utm(lat_lon(1), lat_lon(2));
+                        x_pts = [x_pts, x];
+                        y_pts = [y_pts, y];
+                    end
+                end
+                if ~isempty(x_pts)
+                    roadData.x{end+1} = x_pts;
+                    roadData.y{end+1} = y_pts;
+                end
+            end
+            appendLog(logArea, sprintf('OSM file parsed: %d nodes, %d ways', lat_lon_map.Count, ways.getLength));
+            
+        elseif strcmpi(ext, '.xodr')
+            xdoc = xmlread(filePath);
+            roads = xdoc.getElementsByTagName('road');
+            roadData.x = {}; roadData.y = {};
+            for i = 0:roads.getLength-1
+                road = roads.item(i);
+                planView = road.getElementsByTagName('planView').item(0);
+                geometry = planView.getElementsByTagName('geometry').item(0);
+                
+                if ~isempty(geometry)
+                    x_start = str2double(geometry.getAttribute('s'));
+                    y_start = str2double(geometry.getAttribute('y'));
+                    x_pts = [x_start]; y_pts = [y_start];
+                    roadData.x{end+1} = x_pts;
+                    roadData.y{end+1} = y_pts;
+                end
+            end
+            appendLog(logArea, sprintf('XODR file parsed: %d roads found', roads.getLength));
         else
-            statusText = sprintf('✓ VERIFIED XODR Import\nFile: %s\nRoads: %d\n\nReady for RoadRunner!', ...
-                f, roadCount);
+            appendLog(logArea, 'Unsupported file type for preview. Cannot display.');
+            cla(ax);
+            text(ax, 0.5, 0.5, 'Unsupported File Type', 'HorizontalAlignment', 'center', ...
+                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#E03C32'));
+            axis(ax, 'off');
+            ax.XLim = [0 1]; ax.YLim = [0 1];
+            return;
         end
         
-        text(ax, 0.5, 0.5, statusText, 'HorizontalAlignment', 'center', ...
-             'FontSize', 12, 'Color', [0 0.6 0], 'FontWeight', 'bold');
-        xlim(ax, [0 1]); ylim(ax, [0 1]);
+        if isempty(roadData.x)
+            appendLog(logArea, 'No road data found in file.');
+            cla(ax);
+            text(ax, 0.5, 0.5, 'No Road Data Found', 'HorizontalAlignment', 'center', ...
+                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+            axis(ax, 'off');
+            ax.XLim = [0 1]; ax.YLim = [0 1];
+        else
+            appdata.RoadData = roadData;
+            appdata.LoadedFile = filePath;
+            setappdata(fig, 'AppData', appdata);
+            appendLog(logArea, 'File successfully processed! Ready for export.');
+            
+            % Update preview after successful import
+            updatePreview(fig);
+        end
         
     catch ME
-        appendLog(logArea, ['Error reading file: ' ME.message]);
+        appendLog(logArea, ['Error reading or parsing file: ' ME.message]);
+        cla(ax);
+        text(ax, 0.5, 0.5, 'Error Parsing File', 'HorizontalAlignment', 'center', ...
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#E03C32'));
+        axis(ax, 'off');
+        ax.XLim = [0 1]; ax.YLim = [0 1];
     end
 end
-
-function onBatchAdd(fig, assetList)
-    d = getappdata(fig, 'AppData'); logArea = d.logArea; ax = d.ax;
-    % read selected asset (if none selected use Pothole)
-    items = assetList.Items;
-    if ~isempty(assetList.Value), choice = assetList.Value; else choice = 'Pothole'; end
-    appendLog(logArea, ['Batch adding assets of type: ' choice]);
-    % draw some random icons on the preview to mimic added assets
-    ax = d.ax;
-    hold(ax, 'on');
-    for i = 1:6
-        x = 0.15 + 0.7*rand; y = 0.15 + 0.7*rand;
-        scatter(ax, x, y, 600, hex2rgb('#F79B42'), 'filled'); % orange spots for batch assets
-    end
-    hold(ax, 'off');
-    appendLog(logArea, 'Batch add complete (visual mock).');
-end
-
-% Note: The old onEditPersona function is now obsolete and removed.
-% The new onSceneSelected callback handles this functionality via the dropdown.
 
 function onExport(fig)
-    d = getappdata(fig, 'AppData'); 
-    logArea = d.logArea;
-    
-    % Check if we have a loaded file first
-    if ~isappdata(fig, 'LoadedFile')
+    appdata = getappdata(fig, 'AppData'); 
+    logArea = appdata.logArea;
+    ax = appdata.ax;
+
+    disp(['[DEBUG] LoadedFile for Export: ' appdata.LoadedFile]); % DEBUG
+
+    if ~isfield(appdata, 'LoadedFile') || isempty(appdata.LoadedFile)
         appendLog(logArea, 'ERROR: No file imported! Use Import Scenario first.');
         return;
     end
     
-    loadedFilePath = getappdata(fig, 'LoadedFile');
+    loadedFilePath = appdata.LoadedFile;
     appendLog(logArea, ['Exporting to RoadRunner: ' loadedFilePath]);
     
+    cla(ax);
+    text(ax, 0.5, 0.5, 'Exporting Map...', 'HorizontalAlignment', 'center', ...
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+    axis(ax, 'off');
+    ax.XLim = [0 1]; ax.YLim = [0 1];
+    drawnow;
+    
     try
-        % Add Python path and RELOAD module
         pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
         
-        % SIMPLE reload
         py.importlib.invalidate_caches();
-        
-        % Call Python export function
         control_rr = py.importlib.import_module('control_rr');
         result = control_rr.export_to_roadrunner(char(loadedFilePath));
         
-        % Get results
         isSuccessful = logical(result{1});
         message = char(result{2});
         
         if isSuccessful
             appendLog(logArea, 'SUCCESS: ' + string(message));
+            cla(ax);
+            text(ax, 0.5, 0.5, 'Map Exported Successfully!', 'HorizontalAlignment', 'center', ...
+                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#3CCF4E'));
+            axis(ax, 'off');
+            ax.XLim = [0 1]; ax.YLim = [0 1];
         else
             appendLog(logArea, 'FAILED: ' + string(message));
+            cla(ax);
+            text(ax, 0.5, 0.5, 'Export Failed.', 'HorizontalAlignment', 'center', ...
+                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#E03C32'));
+            axis(ax, 'off');
+            ax.XLim = [0 1]; ax.YLim = [0 1];
         end
         
     catch ME
         appendLog(logArea, ['Python Export Error: ' ME.message]);
+        cla(ax);
+        text(ax, 0.5, 0.5, 'An error occurred.', 'HorizontalAlignment', 'center', ...
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#E03C32'));
+        axis(ax, 'off');
+        ax.XLim = [0 1]; ax.YLim = [0 1];
     end
 end
 
 function onRun(fig)
-    d = getappdata(fig, 'AppData'); 
-    logArea = d.logArea;
+    appdata = getappdata(fig, 'AppData'); 
+    logArea = appdata.logArea;
+    ax = appdata.ax;
+
     appendLog(logArea, 'Starting RoadRunner application...');
     
+    cla(ax);
+    text(ax, 0.5, 0.5, 'Launching RoadRunner...', 'HorizontalAlignment', 'center', ...
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+    axis(ax, 'off');
+    ax.XLim = [0 1]; ax.YLim = [0 1];
+    drawnow;
+
     try
-        % Add Python path and RELOAD module
         pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
@@ -388,8 +709,6 @@ function onRun(fig)
         py.importlib.invalidate_caches();
 
         control_rr = py.importlib.import_module('control_rr');
-        
-        % This will launch the specific executable you have.
         result = control_rr.launch_roadrunner();
         
         isSuccessful = logical(result{1});
@@ -397,12 +716,27 @@ function onRun(fig)
 
         if isSuccessful
             appendLog(logArea, 'SUCCESS: ' + string(message));
+            cla(ax);
+            text(ax, 0.5, 0.5, 'RoadRunner Running!', 'HorizontalAlignment', 'center', ...
+                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#3CCF4E'));
+            axis(ax, 'off');
+            ax.XLim = [0 1]; ax.YLim = [0 1];
         else
             appendLog(logArea, 'FAILED: ' + string(message));
+            cla(ax);
+            text(ax, 0.5, 0.5, 'Failed to Launch.', 'HorizontalAlignment', 'center', ...
+                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#E03C32'));
+            axis(ax, 'off');
+            ax.XLim = [0 1]; ax.YLim = [0 1];
         end
 
     catch ME
         appendLog(logArea, ['Failed to start RoadRunner: ' ME.message]);
+        cla(ax);
+        text(ax, 0.5, 0.5, 'An error occurred.', 'HorizontalAlignment', 'center', ...
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#E03C32'));
+        axis(ax, 'off');
+        ax.XLim = [0 1]; ax.YLim = [0 1];
     end
 end
 
@@ -425,4 +759,41 @@ function rgb = hex2rgb(hex)
     g = double(hex2dec(hex(3:4))) / 255;
     b = double(hex2dec(hex(5:6))) / 255;
     rgb = [r g b];
+end
+
+function [x, y] = deg2utm(lat, lon)
+    % A simplified conversion for plotting purposes
+    
+    % Constants for WGS84
+    a = 6378137; % Earth radius
+    e = 0.081819190842622;
+    k0 = 0.9996;
+    
+    lon_rad = deg2rad(lon);
+    lat_rad = deg2rad(lat);
+    
+    lon_origin = floor((lon + 180)/6)*6 - 180 + 3;
+    lon_origin_rad = deg2rad(lon_origin);
+    
+    e2 = e^2;
+    e4 = e2^2;
+    e6 = e2^3;
+    
+    n = a / sqrt(1 - e2 * sin(lat_rad)^2);
+    t = tan(lat_rad)^2;
+    c = e2 / (1 - e2) * cos(lat_rad)^2;
+    
+    A = cos(lat_rad) * (lon_rad - lon_origin_rad);
+    
+    M = a * ( (1 - e2/4 - 3*e4/64 - 5*e6/256) * lat_rad ...
+        - (3*e2/8 + 3*e4/32 + 45*e6/1024) * sin(2*lat_rad) ...
+        + (15*e4/256 + 45*e6/1024) * sin(4*lat_rad) ...
+        - (35*e6/3072) * sin(6*lat_rad) );
+    
+    x = k0 * n * (A + (1-t+c)*A^3/6 + (5-18*t+t^2+72*c-58*e2)*A^5/120) + 500000;
+    y = k0 * (M + n*tan(lat_rad)*(A^2/2 + (5-t+9*c+4*c^2)*A^4/24 + (61-58*t+t^2+600*c-330*e2)*A^6/720));
+    
+    if lat < 0
+        y = y + 10000000;
+    end
 end
