@@ -2,6 +2,7 @@ import grpc
 import subprocess
 import os
 import time
+from pathlib import Path
 from mathworks.roadrunner import roadrunner_service_messages_pb2
 from mathworks.roadrunner import roadrunner_service_pb2_grpc
 
@@ -58,22 +59,19 @@ def launch_roadrunner():
 
 def load_scene(scene_name):
     """
-    Loads a pre-existing RoadRunner scene.
-
-    Args:
-        scene_name (str): The name of the scene to load (e.g., 'Urban Canyon').
-
-    Returns:
-        tuple: (bool, str) - A tuple indicating success and a message.
+    Loads a .rrscene file into a running RoadRunner instance.
     """
-    print(f"Python Backend: Connecting to RoadRunner to load scene '{scene_name}'")
+    print(f"Python Backend: Connecting to RoadRunner to load file '{file_path}'")
 
+    if not os.path.exists(file_path):
+        return False, f"Error: Scene file not found at {file_path}"
+    
     try:
         with grpc.insecure_channel(SERVER_ADDRESS) as channel:
             api = roadrunner_service_pb2_grpc.RoadRunnerServiceStub(channel)
 
             load_request = roadrunner_service_messages_pb2.LoadSceneRequest()
-            load_request.file_path = scene_name
+            load_request.file_path = file_path
 
             api.LoadScene(load_request)
             return True, f"SUCCESS: Scene '{scene_name}' loaded successfully."
@@ -81,7 +79,7 @@ def load_scene(scene_name):
     except grpc.RpcError as e:
         return False, f"gRPC Error ({e.code()}): {e.details()}"
     except Exception as e:
-        return False, f"General Python Error: {str(e)}"
+        return False, f"An unexpected error occurred: {str(e)}"
 
 def convert_osm_to_xodr(osm_file_path):
     """

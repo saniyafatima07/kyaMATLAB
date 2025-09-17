@@ -61,7 +61,7 @@ function india_twin_builder_app()
     % LEFT PANEL content
     % ---------------------------
     % Import button
-    importBtn = uibutton(leftPanel, 'push', 'Text', 'Import scenario', ...
+    importBtn = uibutton(leftPanel, 'push', 'Text', 'Import map', ...
         'Position', [20 panelH-84 260 64], 'FontSize', 20, 'FontWeight', 'bold');
     importBtn.BackgroundColor = primary; importBtn.FontColor = white;
 
@@ -79,10 +79,12 @@ function india_twin_builder_app()
 
     batchBtn = uibutton(leftPanel, 'push', 'Text', 'Batch add', 'Position', [20 panelH-370 260 44], 'FontSize', 16);
     batchBtn.BackgroundColor = primary; batchBtn.FontColor = white;
-
-    % Edit personas button
-    editPersonaBtn = uibutton(leftPanel, 'push', 'Text', 'Load Scenes', 'Position', [20 panelH-420 260 40], 'FontSize', 14);
-    editPersonaBtn.ButtonPushedFcn = @(s,e) onEditPersona(fig);
+    
+    % Load Scene Dropdown
+    % -- UPDATED COLOR --
+    lblScenes = uilabel(leftPanel, 'Text', 'Load Scene', 'Position', [20 panelH-400 120 22], 'FontSize', 16, 'FontColor', white);
+    ddScenes = uidropdown(leftPanel, 'Position', [20 panelH-440 260 36], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', white);
+    ddScenes.ValueChangedFcn = @(s,e) onSceneSelected(fig, e);
 
     % Log Panel at bottom of leftPanel
     logLeftPanel = uipanel(leftPanel, 'Position', [20 20 260 160], 'Title', 'Log', 'BackgroundColor', panel, 'FontSize', 16, 'FontWeight', 'bold');
@@ -142,13 +144,38 @@ function india_twin_builder_app()
 
     importBtn.ButtonPushedFcn = @(s,e) onImport(fig);
     batchBtn.ButtonPushedFcn  = @(s,e) onBatchAdd(fig, assetList);
-    editPersonaBtn.ButtonPushedFcn = @(s,e) onEditPersona(fig);
     expBtn.ButtonPushedFcn    = @(s,e) onExport(fig);
     runBtn.ButtonPushedFcn    = @(s,e) onRun(fig);
     % Note: No onDownload function provided
 
-    % final log update
+    % Final UI setup and log update
     appendLog(logArea, 'UI ready. Use Import scenario or Batch add to populate preview.');
+    
+    % This block populates the scenes dropdown and MUST be after logArea is created
+    try
+        scenesFolder = fullfile(pwd, 'Scenes');
+        if ~isfolder(scenesFolder)
+            appendLog(logArea, 'WARNING: Scenes folder not found.');
+            ddScenes.Items = {'No scenes found'};
+            ddScenes.Enable = 'off';
+        else
+            sceneFiles = dir(fullfile(scenesFolder, '*.rrscene'));
+            fileNames = {sceneFiles.name};
+            if isempty(fileNames)
+                appendLog(logArea, 'WARNING: No .rrscene files found in Scenes folder.');
+                ddScenes.Items = {'No scenes found'};
+                ddScenes.Enable = 'off';
+            else
+                ddScenes.Items = fileNames;
+                ddScenes.Value = fileNames{1}; % Set initial value
+                appendLog(logArea, sprintf('Found %d scene files. Ready to load.', numel(fileNames)));
+            end
+        end
+    catch ME
+        appendLog(logArea, ['Error populating scenes: ' ME.message]);
+        ddScenes.Items = {'Error'};
+        ddScenes.Enable = 'off';
+    end
 end
 
 % ---------------------------
@@ -182,6 +209,51 @@ end
 % ---------------------------
 % Callbacks (simple, safe)
 % ---------------------------
+function onSceneSelected(fig, event)
+    d = getappdata(fig, 'AppData');
+    logArea = d.logArea;
+    
+    % The selected value from the dropdown is in event.Value
+    selectedSceneFile = event.Value;
+    
+    if isequal(selectedSceneFile, 'No scenes found')
+        appendLog(logArea, 'No scene selected. Aborting.');
+        return;
+    end
+    
+    % Construct the full file path
+    scenesFolder = fullfile(pwd, 'Scenes');
+    scenePath = fullfile(scenesFolder, selectedSceneFile);
+    
+    appendLog(logArea, ['Calling Python backend to load scene: ' selectedSceneFile]);
+    
+    try
+        % Add Python path and RELOAD module
+        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        if count(py.sys.path, pythonScriptPath) == 0
+            insert(py.sys.path, int64(0), pythonScriptPath);
+        end
+        
+        py.importlib.invalidate_caches();
+        
+        % Call the Python function, passing the full file path
+        control_rr = py.importlib.import_module('control_rr');
+        result = control_rr.load_scene_from_file(scenePath);
+        
+        isSuccessful = logical(result{1});
+        message = char(result{2});
+        
+        if isSuccessful
+            appendLog(logArea, 'SUCCESS: ' + string(message));
+        else
+            appendLog(logArea, 'FAILED: ' + string(message));
+        end
+        
+    catch ME
+        appendLog(logArea, ['Python Load Scene Error: ' ME.message]);
+    end
+end
+
 function onImport(fig)
     d = getappdata(fig, 'AppData');
     logArea = d.logArea;
