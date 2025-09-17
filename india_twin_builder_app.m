@@ -1,3 +1,4 @@
+%% 
 function india_twin_builder_app()
 % IndiaTwinBuilder_app_v2
 % Recreates the "India Digital Twin Builder" UI closely to the provided mockup.
@@ -247,7 +248,7 @@ function onEditPersona(fig)
     
     try
         % Add Python path and RELOAD module
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -287,7 +288,7 @@ function onExport(fig)
     
     try
         % Add Python path and RELOAD module
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -297,7 +298,7 @@ function onExport(fig)
         
         % Call Python export function
         control_rr = py.importlib.import_module('control_rr');
-        result = control_rr.export_to_roadrunner(char(loadedFilePath));
+        result = control_rr.import_via_gui(char(loadedFilePath));
         
         % Get results
         isSuccessful = logical(result{1});
@@ -321,7 +322,7 @@ function onRun(fig)
     
     try
         % Add Python path and RELOAD module
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end

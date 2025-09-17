@@ -2,6 +2,7 @@ import grpc
 import subprocess
 import os
 import time
+import pyautogui
 from mathworks.roadrunner import roadrunner_service_messages_pb2
 from mathworks.roadrunner import roadrunner_service_pb2_grpc
 
@@ -37,7 +38,7 @@ def launch_roadrunner():
     
     # Use your specific executable name
     rr_exe_path = r"C:\Program Files\RoadRunner R2025a\bin\win64\AppRoadRunner.exe"
-    project_path = r"C:\ILoveCoding\kyaMATLAB\kyaMATLAB"
+    project_path = r"C:\codes\SIH\kyaMATLAB"
     api_port = "54321"
     
     if not os.path.exists(rr_exe_path):
@@ -76,53 +77,53 @@ def load_scene(scene_name):
 
             load_request = roadrunner_service_messages_pb2.LoadSceneRequest()
             load_request.file_path = scene_name
-
-            response = api.LoadScene(load_request)
-
-            if response.status_code == 0:
-                return True, f"SUCCESS: Scene '{scene_name}' loaded."
-            else:
-                return False, f"RoadRunner API Error: {response.message}"
+            api.LoadScene(load_request)
+            return True, f"SUCCESS: Scene '{scene_name}' loaded successfully."
     except grpc.RpcError as e:
-        return False, f"gRPC Connection Error: {e.details()}"
+        return False, f"gRPC Error ({e.code()}): {e.details()}"
     except Exception as e:
         return False, f"General Python Error: {str(e)}"
 
-def export_to_roadrunner(file_path):
+def import_via_gui(osm_file_path):
     """
-    Imports a road network file into a currently running RoadRunner instance.
-    This function uses the gRPC API for communication.
-    
-    Args:
-        file_path (str): The full path to the .osm or .xodr file.
-
-    Returns:
-        tuple: (bool, str) - A tuple indicating success and a message.
+    Imports an .osm file by automating the SD Map Viewer Tool workflow.
+    This version has longer delays for increased reliability.
     """
-    print(f"Python Backend: Connecting to RoadRunner at {SERVER_ADDRESS} to import file...")
-
     try:
-        # Establish an insecure gRPC channel to the RoadRunner server
-        with grpc.insecure_channel(SERVER_ADDRESS) as channel:
-            # Create a gRPC client stub
-            api = roadrunner_service_pb2_grpc.RoadRunnerServiceStub(channel)
+        print("Python Backend: Starting GUI automation for SD Map Viewer...")
 
-            # Create an ImportRoadNetworkRequest message
-            import_request = roadrunner_service_messages_pb2.ImportRoadNetworkRequest()
-            import_request.file_path = file_path
-            
-            # Send the request to RoadRunner
-            response = api.ImportRoadNetwork(import_request)
+        # !!! CRITICAL: Ensure these coordinates are correct for your screen !!!
+        SD_MAP_VIEWER_ICON_POS = (1166, 161)   # X, Y of the "SD Map Viewer Tool" icon
+        OSM_ICON_POS           = (30, 280)  # X, Y of the "Open OpenStreetMap file" icon
 
-            # The response message contains a success/failure status and a message
-            if response.status_code == 0:
-                return True, f"SUCCESS: '{os.path.basename(file_path)}' imported."
-            else:
-                return False, f"RoadRunner API Error: {response.message}"
-                
-    except grpc.RpcError as e:
-        return False, f"gRPC Connection Error: {e.details()}"
+        print("You have 5 seconds to click on the main RoadRunner window to make it active...")
+        time.sleep(5) # Increased initial delay
+
+        # 1. Click the "SD Map Viewer Tool" icon
+        print(f"Clicking SD Map Viewer Tool at {SD_MAP_VIEWER_ICON_POS}...")
+        pyautogui.click(SD_MAP_VIEWER_ICON_POS)
+        pyautogui.click(SD_MAP_VIEWER_ICON_POS)
+        time.sleep(4) # Increased delay to allow the viewer to open fully
+
+        # 2. Click the "Open OpenStreetMap file" icon
+        print(f"Clicking OpenStreetMap file icon at {OSM_ICON_POS}...")
+        pyautogui.click(OSM_ICON_POS)
+        pyautogui.click(OSM_ICON_POS)
+        time.sleep(4) # Increased delay to allow the file dialog to open and become active
+
+        # 3. Type the full path to the .osm file
+        print(f"Typing file path: {osm_file_path}")
+        pyautogui.write(osm_file_path, interval=0.05) # Slightly slower typing
+        time.sleep(2)
+
+        # 4. Press Enter to confirm the import
+        print("Pressing Enter...")
+        pyautogui.press('enter')
+        
+        print("Python Backend: GUI automation commands sent successfully.")
+        return True, "SUCCESS: GUI import process initiated via SD Map Viewer."
+
     except Exception as e:
-        return False, f"General Python Error: {str(e)}"
-    
-__all__ = ['export_to_roadrunner', 'launch_roadrunner', 'load_scene']
+        return False, f"GUI Automation Error: {str(e)}"
+
+__all__ = ['import_via_gui', 'launch_roadrunner', 'load_scene']
