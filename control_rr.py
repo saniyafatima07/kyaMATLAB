@@ -2,6 +2,7 @@ import grpc
 import subprocess
 import os
 import time
+from pathlib import Path
 from mathworks.roadrunner import roadrunner_service_messages_pb2
 from mathworks.roadrunner import roadrunner_service_pb2_grpc
 
@@ -58,35 +59,32 @@ def launch_roadrunner():
 
 
 
-def load_scene(scene_name):
+def load_scene_from_file(file_path):
     """
-    Loads a pre-existing RoadRunner scene.
-
-    Args:
-        scene_name (str): The name of the scene to load (e.g., 'Urban Canyon').
-
-    Returns:
-        tuple: (bool, str) - A tuple indicating success and a message.
+    Loads a .rrscene file into a running RoadRunner instance.
     """
-    print(f"Python Backend: Connecting to RoadRunner to load scene '{scene_name}'")
+    print(f"Python Backend: Connecting to RoadRunner to load file '{file_path}'")
 
+    if not os.path.exists(file_path):
+        return False, f"Error: Scene file not found at {file_path}"
+    
     try:
         with grpc.insecure_channel(SERVER_ADDRESS) as channel:
             api = roadrunner_service_pb2_grpc.RoadRunnerServiceStub(channel)
 
             load_request = roadrunner_service_messages_pb2.LoadSceneRequest()
-            load_request.file_path = scene_name
+            load_request.file_path = file_path
 
             response = api.LoadScene(load_request)
 
             if response.status_code == 0:
-                return True, f"SUCCESS: Scene '{scene_name}' loaded."
+                return True, f"SUCCESS: Scene loaded from '{Path(file_path).name}'."
             else:
                 return False, f"RoadRunner API Error: {response.message}"
     except grpc.RpcError as e:
         return False, f"gRPC Connection Error: {e.details()}"
     except Exception as e:
-        return False, f"General Python Error: {str(e)}"
+        return False, f"An unexpected error occurred: {str(e)}"
 
 def export_to_roadrunner(file_path):
     """
