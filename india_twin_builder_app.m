@@ -347,7 +347,7 @@ function onExport(fig)
     
     try
         % Add Python path and RELOAD module
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -381,7 +381,7 @@ function onRun(fig)
     
     try
         % Add Python path and RELOAD module
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end

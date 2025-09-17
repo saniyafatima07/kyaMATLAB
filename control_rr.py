@@ -3,6 +3,7 @@ import subprocess
 import os
 import time
 from pathlib import Path
+from pathlib import Path
 from mathworks.roadrunner import roadrunner_service_messages_pb2
 from mathworks.roadrunner import roadrunner_service_pb2_grpc
 
@@ -38,7 +39,7 @@ def launch_roadrunner():
     
     # Use your specific executable name
     rr_exe_path = r"C:\Program Files\RoadRunner R2025a\bin\win64\AppRoadRunner.exe"
-    project_path = r"C:\ILoveCoding\kyaMATLAB\kyaMATLAB"
+    project_path = r"C:\codes\SIH\kyaMATLAB"
     api_port = "54321"
     
     if not os.path.exists(rr_exe_path):
@@ -75,51 +76,92 @@ def load_scene_from_file(file_path):
             load_request = roadrunner_service_messages_pb2.LoadSceneRequest()
             load_request.file_path = file_path
 
-            response = api.LoadScene(load_request)
-
-            if response.status_code == 0:
-                return True, f"SUCCESS: Scene loaded from '{Path(file_path).name}'."
-            else:
-                return False, f"RoadRunner API Error: {response.message}"
+            api.LoadScene(load_request)
+            return True, f"SUCCESS: Scene '{scene_name}' loaded successfully."
+        
     except grpc.RpcError as e:
-        return False, f"gRPC Connection Error: {e.details()}"
+        return False, f"gRPC Error ({e.code()}): {e.details()}"
     except Exception as e:
         return False, f"An unexpected error occurred: {str(e)}"
 
+def convert_osm_to_xodr(osm_file_path):
+    """
+    Converts an .osm file to an .xodr file using SUMO's netconvert tool.
+    Returns the path to the new .xodr file or an error message.
+    """
+    print(f"Python Backend: Converting '{os.path.basename(osm_file_path)}' to OpenDRIVE...")
+    
+    xodr_file_path = os.path.splitext(osm_file_path)[0] + ".xodr"
+    
+    try:
+        # Command for the subprocess call
+        command = [
+            "netconvert",
+            "--osm-files", osm_file_path,
+            "--opendrive-output", xodr_file_path,
+            #"--offset.disable-normalization", "true",
+            "--proj.scale", "1",
+            "--output.street-names", "true",
+        ]
+        
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        print(f"Python Backend: Conversion successful. Output at '{xodr_file_path}'")
+        return xodr_file_path, None
+        
+    except FileNotFoundError:
+        error_msg = "Conversion failed: 'netconvert' command not found. Is SUMO installed and in your system PATH?"
+        print(f"Python Backend: {error_msg}")
+        return None, error_msg
+        
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Conversion failed with error: {e.stderr}"
+        print(f"Python Backend: {error_msg}")
+        return None, error_msg
+
 def export_to_roadrunner(file_path):
     """
-    Imports a road network file into a currently running RoadRunner instance.
-    This function uses the gRPC API for communication.
-    
-    Args:
-        file_path (str): The full path to the .osm or .xodr file.
-
-    Returns:
-        tuple: (bool, str) - A tuple indicating success and a message.
+    Imports a road network file. If it's an .osm file, it first
+    converts it to .xodr and then imports it into RoadRunner.
     """
-    print(f"Python Backend: Connecting to RoadRunner at {SERVER_ADDRESS} to import file...")
+    print(f"Python Backend: Starting import process for '{file_path}'...")
+    
+    file_to_import = file_path
+    format_name = ""
+    
+    _, file_extension = os.path.splitext(file_path)
+    
+    if file_extension.lower() == ".osm":
+        # Step 1: Convert the .osm file
+        converted_path, error = convert_osm_to_xodr(file_path)
+        if error:
+            return False, error # Return the conversion error message
+        file_to_import = converted_path
+        format_name = "OpenDRIVE" # The format is now OpenDRIVE
+        
+    elif file_extension.lower() == ".xodr":
+        format_name = "OpenDRIVE"
+        
+    else:
+        return False, f"Unsupported file type: {file_extension}"
 
+    # Step 2: Import the file (which is now guaranteed to be .xodr) into RoadRunner
+    print(f"Python Backend: Importing '{os.path.basename(file_to_import)}' into RoadRunner...")
+    
     try:
-        # Establish an insecure gRPC channel to the RoadRunner server
         with grpc.insecure_channel(SERVER_ADDRESS) as channel:
             # Create a gRPC client stub
             api = roadrunner_service_pb2_grpc.RoadRunnerServiceStub(channel)
 
-            # Create an ImportRoadNetworkRequest message
-            import_request = roadrunner_service_messages_pb2.ImportRoadNetworkRequest()
-            import_request.file_path = file_path
+            request = roadrunner_service_messages_pb2.ImportRequest()
+            request.file_path = file_to_import
+            request.format_name = format_name
             
-            # Send the request to RoadRunner
-            response = api.ImportRoadNetwork(import_request)
-
-            # The response message contains a success/failure status and a message
-            if response.status_code == 0:
-                return True, f"SUCCESS: '{os.path.basename(file_path)}' imported."
-            else:
-                return False, f"RoadRunner API Error: {response.message}"
-                
+            api.Import(request)
+            
+            return True, f"SUCCESS: '{os.path.basename(file_to_import)}' imported successfully."
+            
     except grpc.RpcError as e:
-        return False, f"gRPC Connection Error: {e.details()}"
+        return False, f"gRPC Error ({e.code()}): {e.details()}"
     except Exception as e:
         return False, f"General Python Error: {str(e)}"
     
