@@ -3,7 +3,6 @@ import subprocess
 import os
 import time
 from pathlib import Path
-from pathlib import Path
 from mathworks.roadrunner import roadrunner_service_messages_pb2
 from mathworks.roadrunner import roadrunner_service_pb2_grpc
 
@@ -39,7 +38,7 @@ def launch_roadrunner():
     
     # Use your specific executable name
     rr_exe_path = r"C:\Program Files\RoadRunner R2025a\bin\win64\AppRoadRunner.exe"
-    project_path = r"C:\codes\SIH\kyaMATLAB"
+    project_path = r"C:\ILoveCoding\kyaMATLAB\kyaMATLAB"
     api_port = "54321"
     
     if not os.path.exists(rr_exe_path):
@@ -76,11 +75,14 @@ def load_scene_from_file(file_path):
             load_request = roadrunner_service_messages_pb2.LoadSceneRequest()
             load_request.file_path = file_path
 
-            api.LoadScene(load_request)
-            return True, f"SUCCESS: Scene '{scene_name}' loaded successfully."
-        
+            response = api.LoadScene(load_request)
+
+            if response.status_code == 0:
+                return True, f"SUCCESS: Scene loaded from '{Path(file_path).name}'."
+            else:
+                return False, f"RoadRunner API Error: {response.message}"
     except grpc.RpcError as e:
-        return False, f"gRPC Error ({e.code()}): {e.details()}"
+        return False, f"gRPC Connection Error: {e.details()}"
     except Exception as e:
         return False, f"An unexpected error occurred: {str(e)}"
 
