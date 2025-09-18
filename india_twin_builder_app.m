@@ -75,7 +75,7 @@ function india_twin_builder_app()
     
     assetList = uilistbox(leftPanel, ...
         'Position', [20 panelH-400 260 180], ...
-        'Items', {'Pothole','Barricade','Rickshaw','Car', 'Road'}, ...
+        'Items', {'Pothole','Barricade','Rickshaw','Car', 'Two-wheeler', 'Road'}, ...
         'FontSize', 16, 'FontColor', white);
     assetList.BackgroundColor = hex2rgb('#213753');
     assetList.ValueChangedFcn = @(s,e) onAssetSelected(fig, e);
@@ -114,9 +114,9 @@ function india_twin_builder_app()
                               'FontWeight', 'bold', 'FontSize', 14);
     
     assetTable = uitable(assetTablePanel, 'Position', [10 10 centerW-56 120], ...
-                         'ColumnName', {'Asset', 'Property 1', 'Property 2'}, ...
-                         'ColumnFormat', {'char', 'char', 'char'}, ...
-                         'ColumnWidth', {'auto', 'auto', 'auto'}, ...
+                         'ColumnName', {'Asset', 'Property 1', 'Property 2', 'Property 3'}, ...
+                         'ColumnFormat', {'char', 'char', 'char', 'char'}, ...
+                         'ColumnWidth', {'auto', 'auto', 'auto', 'auto'}, ...
                          'RowName', {}, 'Data', []);
     assetTable.BackgroundColor = hex2rgb('#15294C');
     assetTable.ForegroundColor = white;
@@ -222,15 +222,13 @@ function onAssetSelected(fig, event)
     
     switch assetType
         case 'Pothole'
-            lbl1 = uilabel(popPanel, 'Text', 'Vehicle Type:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
-            ef1 = uieditfield(popPanel, 'text', 'Position', [140 220 200 28]);
-            lbl2 = uilabel(popPanel, 'Text', 'Hole Width:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl1 = uilabel(popPanel, 'Text', 'Hole Width:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            ef1 = uieditfield(popPanel, 'numeric', 'Position', [140 220 200 28]);
+            lbl2 = uilabel(popPanel, 'Text', 'Area:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
             ef2 = uieditfield(popPanel, 'numeric', 'Position', [140 180 200 28]);
-            lbl3 = uilabel(popPanel, 'Text', 'Area:', 'Position', [20 140 120 22], 'FontColor', hex2rgb('#A3B2CC'));
-            ef3 = uieditfield(popPanel, 'numeric', 'Position', [140 140 200 28]);
             
             applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
-            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, ef2, ef3);
+            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, ef2);
 
         case 'Barricade'
             lbl1 = uilabel(popPanel, 'Text', 'Type:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
@@ -241,14 +239,16 @@ function onAssetSelected(fig, event)
             applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
             applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, dd1, ef2);
             
-        case {'Rickshaw', 'Car'}
+        case {'Rickshaw', 'Car', 'Two-wheeler'}
             lbl1 = uilabel(popPanel, 'Text', 'Vehicle Count:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
             ef1 = uieditfield(popPanel, 'numeric', 'Position', [140 220 200 28]);
-            lbl2 = uilabel(popPanel, 'Text', 'Vehicle Color:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
-            dd1 = uidropdown(popPanel, 'Items', {'Red', 'Blue', 'Green'}, 'Position', [140 180 200 28]);
+            lbl2 = uilabel(popPanel, 'Text', 'Behaviour:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            dd1 = uidropdown(popPanel, 'Items', {'Normal', 'Aggressive', 'Erratic'}, 'Position', [140 180 200 28]);
+            lbl3 = uilabel(popPanel, 'Text', 'Vehicle Color:', 'Position', [20 140 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            dd2 = uidropdown(popPanel, 'Items', {'Red', 'Blue', 'Green'}, 'Position', [140 140 200 28]);
 
             applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
-            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, dd1);
+            applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, dd1, dd2);
 
         case 'Road'
             lbl1 = uilabel(popPanel, 'Text', 'Road Width:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
@@ -284,17 +284,17 @@ function onApply_AddAsset(mainFig, popFig, assetType, varargin)
         % Fetch properties from pop-up and display in table
         property1 = 'N/A';
         property2 = 'N/A';
+        property3 = 'N/A';
         
         % Store all properties in a struct
         assetData = struct('Type', assetType, 'x', [], 'y', []);
         
         switch assetType
             case 'Pothole'
-                vehicleType = varargin{1}.Value;
-                holeWidth = varargin{2}.Value;
-                area = varargin{3}.Value;
+                holeWidth = varargin{1}.Value;
+                area = varargin{2}.Value;
                 
-                assetData.Properties = struct('VehicleType', vehicleType, 'HoleWidth', holeWidth, 'Area', area);
+                assetData.Properties = struct('HoleWidth', holeWidth, 'Area', area);
                 
                 property1 = sprintf('Width: %.2f', holeWidth);
                 property2 = sprintf('Area: %.2f', area);
@@ -308,14 +308,16 @@ function onApply_AddAsset(mainFig, popFig, assetType, varargin)
                 property1 = ['Type: ' barricadeType];
                 property2 = sprintf('Distance: %.2f', distance);
                 
-            case {'Rickshaw', 'Car'}
+            case {'Rickshaw', 'Car', 'Two-wheeler'}
                 vehicleCount = varargin{1}.Value;
-                vehicleColor = varargin{2}.Value;
+                vehicleBehaviour = varargin{2}.Value;
+                vehicleColor = varargin{3}.Value;
 
-                assetData.Properties = struct('Count', vehicleCount, 'Color', vehicleColor);
+                assetData.Properties = struct('Count', vehicleCount, 'Behaviour', vehicleBehaviour, 'Color', vehicleColor);
                 
                 property1 = sprintf('Count: %d', vehicleCount);
-                property2 = ['Color: ' vehicleColor];
+                property2 = ['Behaviour: ' vehicleBehaviour];
+                property3 = ['Color: ' vehicleColor];
             
             case 'Road'
                 roadWidth = varargin{1}.Value;
@@ -358,12 +360,7 @@ function onApply_AddAsset(mainFig, popFig, assetType, varargin)
 
         % Update table
         currentData = assetTable.Data;
-        newData = {assetType, property1, property2};
-        
-        % --- New Debugging Code ---
-        disp('[DEBUG] Attempting to update table.');
-        disp(['[DEBUG] Current table data is of size: ' num2str(size(currentData))]);
-        disp(['[DEBUG] New row data to add: ' strjoin(string(newData))]);
+        newData = {assetType, property1, property2, property3};
         
         if isempty(currentData)
             assetTable.Data = newData;
@@ -371,8 +368,17 @@ function onApply_AddAsset(mainFig, popFig, assetType, varargin)
             assetTable.Data = [currentData; newData];
         end
         
+        % Add a log message to confirm table update
+        appendLog(logArea, 'Table data updated.');
+        
+        % Force UI update
+        drawnow;
+
         % Update the preview
         updatePreview(mainFig);
+        
+        % Add a log message to confirm preview update
+        appendLog(logArea, 'Preview updated with new asset.');
         
         appendLog(logArea, '-----------------------------');
         delete(popFig);
