@@ -131,10 +131,16 @@ function india_twin_builder_app()
 
     lblWeather = uilabel(rightPanel, 'Text', 'Weather', 'Position', [20 panelH-168 120 22], 'FontSize', 16, 'FontColor', white);
     ddWeather = uidropdown(rightPanel, 'Items', {'Clear','Rain','Fog'}, 'Value', 'Clear', 'Position', [20 panelH-208 220 36]);
-
-    lblFidelity = uilabel(rightPanel, 'Text', 'Fidelity', 'Position', [20 panelH-246 120 22], 'FontSize', 16, 'FontColor', white);
-    ddFidelity = uidropdown(rightPanel, 'Items', {'Kinematic','Dynamics'}, 'Value', 'Kinematic', 'Position', [20 panelH-286 220 36]);
     
+    % NEW: Add a new button for custom scenario
+    createScenarioBtn = uibutton(rightPanel, 'push', 'Text', 'Create Custom Scenario', ...
+        'Position', [20 panelH-285 220 48], 'FontSize', 17);
+    createScenarioBtn.BackgroundColor = accent; 
+    createScenarioBtn.FontColor = white;
+    createScenarioBtn.ButtonPushedFcn = @(s,e) onCreateCustomScenario(fig);
+
+    % lblFidelity and ddFidelity are removed as per request.
+
     % New Sections for future use
     lblSettings = uilabel(rightPanel, 'Text', 'Settings', 'Position', [20 panelH-324 120 22], 'FontSize', 16, 'FontColor', white);
     settingsPanel = uipanel(rightPanel, 'Position', [20 panelH-390 220 60], 'BackgroundColor', hex2rgb('#213753'), 'BorderType', 'none');
@@ -827,6 +833,86 @@ function onRun(fig)
     end
 end
 
+% ---------------------------
+% NEW CALLBACK FOR CUSTOM SCENARIO
+% ---------------------------
+% ---------------------------
+% NEW CALLBACK FOR CUSTOM SCENARIO
+% ---------------------------
+function onCreateCustomScenario(fig)
+    appdata = getappdata(fig, 'AppData');
+    logArea = appdata.logArea;
+    appendLog(logArea, 'Creating custom scenario...');
+
+    % Define the predefined scenes from the image provided
+    predefinedScenes = {'Bridge', 'FourWaySignal', 'FourWayStop', 'ParkingGarage', ...
+                        'SanAntonio', 'ScenarioBasic', 'SimpleBankedRoad', 'SimpleCurve', ...
+                        'SimpleFreewayRamps', 'SimpleRoundabout', 'T_Intersection', 'Tunnel'};
+
+    % Create the pop-up window
+    popFig = uifigure('Name', 'Create Custom Scenario', 'Position', [0 0 450 450], 'Visible', 'off'); % Increased window height
+    centerfig(popFig);
+
+    % Main panel for the pop-up
+    popPanel = uipanel(popFig, 'Position', [10 10 430 430], 'BorderType', 'none', 'BackgroundColor', hex2rgb('#15294C'));
+
+    % --- UI Elements for the Pop-up ---
+    % Scene Dropdown
+    uilabel(popPanel, 'Text', 'Select Scene:', 'Position', [20 380 120 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 14);
+    ddScene = uidropdown(popPanel, 'Items', predefinedScenes, 'Position', [150 380 250 28], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', hex2rgb('#A3B2CC'));
+
+    % Traffic Percentage Sliders
+    uilabel(popPanel, 'Text', 'Traffic Percentages', 'Position', [20 330 200 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 16, 'FontWeight', 'bold');
+    uilabel(popPanel, 'Text', 'Two-wheeler:', 'Position', [20 300 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    sldTwoWheeler = uislider(popPanel, 'Position', [150 300 250 3], 'Limits', [0 100], 'Value', 25);
+    uilabel(popPanel, 'Text', 'Rickshaw:', 'Position', [20 260 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    sldRickshaw = uislider(popPanel, 'Position', [150 260 250 3], 'Limits', [0 100], 'Value', 25);
+    uilabel(popPanel, 'Text', 'Bus:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    sldBus = uislider(popPanel, 'Position', [150 220 250 3], 'Limits', [0 100], 'Value', 10);
+    uilabel(popPanel, 'Text', 'Car:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    sldCar = uislider(popPanel, 'Position', [150 180 250 3], 'Limits', [0 100], 'Value', 40);
+
+    % Driver Behavior Dropdown
+    uilabel(popPanel, 'Text', 'Driver Behavior:', 'Position', [20 130 120 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 14);
+    ddBehavior = uidropdown(popPanel, 'Items', {'Cautious', 'Erratic', 'Aggressive'}, 'Position', [150 130 250 28], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', hex2rgb('#A3B2CC'));
+
+    % Pothole Percentage
+    uilabel(popPanel, 'Text', 'Pothole %:', 'Position', [20 90 120 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 14);
+    efPothole = uieditfield(popPanel, 'numeric', 'Position', [150 90 250 28]);
+    efPothole.Value = 10; % Default value
+
+    % "Generate" Button
+    generateBtn = uibutton(popFig, 'push', 'Text', 'Generate Scenario', ...
+        'Position', [125 30 200 40]);
+    generateBtn.BackgroundColor = hex2rgb('#2B7FFF');
+    generateBtn.FontColor = [1 1 1];
+    generateBtn.ButtonPushedFcn = @(s,e) onGenerateScenario(popFig, ddScene, sldTwoWheeler, sldRickshaw, sldBus, sldCar, ddBehavior, efPothole);
+
+    popFig.Visible = 'on';
+
+end
+
+% NEW CALLBACK: Handles the "Generate Scenario" button press
+function onGenerateScenario(popFig, ddScene, sldTwoWheeler, sldRickshaw, sldBus, sldCar, ddBehavior, efPothole)
+    
+    selectedScene = ddScene.Value;
+    traffic = struct('TwoWheeler', sldTwoWheeler.Value, ...
+                     'Rickshaw', sldRickshaw.Value, ...
+                     'Bus', sldBus.Value, ...
+                     'Car', sldCar.Value);
+    behavior = ddBehavior.Value;
+    potholePercent = efPothole.Value;
+
+    % You would add the logic here to use these values to generate a scenario
+    fprintf('Generating scenario for scene "%s"...\n', selectedScene);
+    fprintf('Traffic Mix: Two-Wheeler %.2f%%, Rickshaw %.2f%%, Bus %.2f%%, Car %.2f%%\n', ...
+            traffic.TwoWheeler, traffic.Rickshaw, traffic.Bus, traffic.Car);
+    fprintf('Driver Behavior: %s\n', behavior);
+    fprintf('Pothole Percentage: %.2f%%\n', potholePercent);
+
+    % Close the pop-up window
+    delete(popFig);
+end
 % ---------------------------
 % small utilities
 % ---------------------------
