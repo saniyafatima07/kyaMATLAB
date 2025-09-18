@@ -138,17 +138,30 @@ function india_twin_builder_app()
     % New Sections for future use
     lblSettings = uilabel(rightPanel, 'Text', 'Settings', 'Position', [20 panelH-324 120 22], 'FontSize', 16, 'FontColor', white);
     settingsPanel = uipanel(rightPanel, 'Position', [20 panelH-390 220 60], 'BackgroundColor', hex2rgb('#213753'), 'BorderType', 'none');
-    % -- UI and label change as requested --
-    settingsBtn = uibutton(settingsPanel, 'push', 'Text', 'Project Settings', 'Position', [10 10 200 40], ...
-        'ButtonPushedFcn', @(s,e) appendLog(logArea, 'Project Settings button pressed. (Non-functional)'));
-    settingsBtn.BackgroundColor = accent; settingsBtn.FontColor = white;
+  % -- UI and label change as requested --
+settingsBtn = uibutton(settingsPanel, 'push', ...
+    'Text', 'Import Video', ...
+    'Position', [10 10 200 40], ...
+    'FontSize', 17, ...
+    'ButtonPushedFcn', @(s,e) onImportVideo(fig, logArea));
+settingsBtn.BackgroundColor = accent; 
+settingsBtn.FontColor = white;
 
-    lblBatch = uilabel(rightPanel, 'Text', 'Batch Operations', 'Position', [20 panelH-420 200 22], 'FontSize', 16, 'FontColor', white);
-    batchPanel = uipanel(rightPanel, 'Position', [20 panelH-490 220 60], 'BackgroundColor', hex2rgb('#213753'), 'BorderType', 'none');
-    % -- UI and label change as requested --
-    batchBtn = uibutton(batchPanel, 'push', 'Text', 'Batch Export', 'Position', [10 10 200 40], ...
-        'ButtonPushedFcn', @(s,e) appendLog(logArea, 'Batch Export button pressed. (Non-functional)'));
-    batchBtn.BackgroundColor = accent; batchBtn.FontColor = white;
+lblBatch = uilabel(rightPanel, 'Text', 'Batch Operations', ...
+    'Position', [20 panelH-420 200 22], 'FontSize', 16, 'FontColor', white);
+batchPanel = uipanel(rightPanel, ...
+    'Position', [20 panelH-490 220 60], ...
+    'BackgroundColor', hex2rgb('#213753'), ...
+    'BorderType', 'none');
+
+   % -- UI and label change as requested --
+batchBtn = uibutton(batchPanel, 'push', ...
+    'Text', 'Import Photo', ...
+    'Position', [10 10 200 40], ...
+    'FontSize', 17, ...
+    'ButtonPushedFcn', @(s,e) onImportPhoto(fig, logArea));
+batchBtn.BackgroundColor = accent; 
+batchBtn.FontColor = white;
 
     expBtn = uibutton(rightPanel, 'push', 'Text', 'Export to RoadRunner', 'Position', [20 112 220 48], 'FontSize', 17);
     expBtn.BackgroundColor = primary; expBtn.FontColor = white;
@@ -261,6 +274,74 @@ function onAssetSelected(fig, event)
     end
     
     popFig.Visible = 'on';
+end
+%import video___________
+
+function onImportVideo(fig, logArea)
+    [file, path] = uigetfile({'*.mp4;*.avi;*.mov;*.mkv', 'Video Files (*.mp4, *.avi, *.mov, *.mkv)'}, ...
+                              'Select a Video');
+    if isequal(file, 0)
+        appendLog(logArea, 'Video import cancelled.');
+        return;
+    end
+
+    fullPath = fullfile(path, file);
+    appendLog(logArea, ['Video imported: ' fullPath]);
+
+    try
+        % Create a new panel inside your app to show video
+        videoPanel = uipanel(fig, ...
+            'Title', 'Imported Video', ...
+            'Position', [100 100 480 360]);  % adjust as needed
+
+        % Use MATLAB's VideoReader to play the video
+        v = VideoReader(fullPath);
+        ax = uiaxes(videoPanel, 'Position', [10 10 460 320]);
+        
+        % Play first frame
+        frame = readFrame(v);
+        imshow(frame, 'Parent', ax);
+
+        % Optional: simple playback loop
+        while hasFrame(v)
+            frame = readFrame(v);
+            imshow(frame, 'Parent', ax);
+            pause(1/v.FrameRate); % match playback speed
+        end
+    catch ME
+        appendLog(logArea, ['Error displaying video: ' ME.message]);
+    end
+end
+
+
+%____________import photo
+function onImportPhoto(fig, logArea)
+    [file, path] = uigetfile({'*.jpg;*.jpeg;*.png;*.bmp', 'Image Files (*.jpg, *.jpeg, *.png, *.bmp)'}, ...
+                              'Select a Photo');
+    if isequal(file, 0)
+        appendLog(logArea, 'Photo import cancelled.');
+        return;
+    end
+    
+    fullPath = fullfile(path, file);
+    appendLog(logArea, ['Photo imported: ' fullPath]);
+    
+    % Show the photo inside a panel in the main UI
+    try
+        img = imread(fullPath);
+
+        % Create a new panel inside your main figure (top right corner example)
+        photoPanel = uipanel(fig, ...
+            'Title', 'Imported Photo', ...
+            'Position', [50 50 400 300]);   % adjust size/position as needed
+        
+        % Place a UIAxes inside this panel
+        ax = uiaxes(photoPanel, 'Position',[10 10 380 260]);
+        imshow(img, 'Parent', ax);
+
+    catch ME
+        appendLog(logArea, ['Error displaying image: ' ME.message]);
+    end
 end
 
 % Helper function to center a figure
