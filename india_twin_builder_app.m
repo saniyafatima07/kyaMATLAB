@@ -14,21 +14,30 @@ function india_twin_builder_app()
     mapBg   = hex2rgb('#2D2D2D');
     black   = [0 0 0];
     
+    % ---------------------------
+    % Get Screen Size for dynamic layout
+    % ---------------------------
     scr_sz = get(0, 'ScreenSize');
     figW = scr_sz(3);
     figH = scr_sz(4);
+    % ---------------------------
+    % Create UIFigure (Full-screen)
+    % ---------------------------
     fig = uifigure('Name','SimuTwin', ...
                    'Position',[1 1 figW figH], ...
                    'Color', bg, 'Resize', 'off');
-    
+    % Title bar area (large)
     topH = 96;
     topPanel = uipanel(fig, 'Position', [0 figH-topH figW topH], ...
                        'BackgroundColor', panel, 'BorderType', 'none');
     
+    % --- RE-CENTERED TITLE BAR DESIGN (No emoji, centered) ---
     titleLabel = uilabel(topPanel, 'Text', 'SimuTwin', ...
         'Position', [0 18 figW 60], 'HorizontalAlignment', 'center', ... % Centered
         'FontSize', 30, 'FontWeight', 'bold', 'FontColor', primary, 'BackgroundColor', panel); % Primary color for emphasis
-    
+    % ---------------------------
+    % Panels: Left / Center / Right
+    % ---------------------------
     panelY = 20;
     panelH = figH - topH - (2 * panelY);
     leftW = 300;
@@ -43,37 +52,80 @@ function india_twin_builder_app()
                           'BackgroundColor', panel, 'BorderType', 'none');
     rightPanel = uipanel(fig, 'Position', [rightX panelY rightW panelH], ...
                          'BackgroundColor', panel, 'BorderType', 'none');
+    % ---------------------------
+    % Left Panel Configuration Variables
+    % ---------------------------
+    LEFT_BTN_W = 220; % Same as right panel
+    LEFT_BTN_H = 48; % Same as right panel
+    LEFT_BTN_X = 40; % Centered for aesthetic on 300px panel
+    LEFT_LABEL_H = 22;
+    LISTBOX_H = 180;
+    DD_H = 36;
+    REGULAR_GAP = 24;
+    SMALL_GAP = 12;
+
+    % Initial vertical position
+    currentY = panelH - 40; 
     
+    % ---------------------------
+    % LEFT PANEL content (Modified Sizing and Spacing)
+    % ---------------------------
+    
+    % 1. Import map button (Sized to match right panel)
+    y_importBtn = currentY - LEFT_BTN_H;
     importBtn = uibutton(leftPanel, 'push', 'Text', 'Import map', ...
-        'Position', [20 panelH-84 260 64], 'FontSize', 20, 'FontWeight', 'normal');
+        'Position', [LEFT_BTN_X y_importBtn LEFT_BTN_W LEFT_BTN_H], 'FontSize', 17, 'FontWeight', 'normal');
     importBtn.BackgroundColor = primary; importBtn.FontColor = black;
     
+    currentY = y_importBtn - REGULAR_GAP;
+
     % --- BEGIN ASSET UI ---
-    addAssetBtn = uibutton(leftPanel, 'push', 'Text', 'Add Asset', ...
-        'Position', [20 panelH-168 260 64], 'FontSize', 20, 'FontWeight', 'normal');
-    addAssetBtn.BackgroundColor = primary; addAssetBtn.FontColor = black;
-    lblAssets = uilabel(leftPanel, 'Text', 'Select an Asset', ...
-        'Position', [20 panelH-210 260 22], 'FontSize', 16, 'FontColor', white);
     
+    % 2. Label: Select an Asset
+    y_lblAssets = currentY - LEFT_LABEL_H;
+    lblAssets = uilabel(leftPanel, 'Text', 'Select an Asset', ...
+        'Position', [LEFT_BTN_X y_lblAssets LEFT_BTN_W LEFT_LABEL_H], 'FontSize', 16, 'FontColor', white);
+    
+    currentY = y_lblAssets - SMALL_GAP;
+
+    % 3. Dropdown/Listbox
+    y_assetList = currentY - LISTBOX_H;
     assetList = uilistbox(leftPanel, ...
-        'Position', [20 panelH-400 260 180], ...
+        'Position', [LEFT_BTN_X y_assetList LEFT_BTN_W LISTBOX_H], ...
         'Items', {'Pothole','Barricade','Rickshaw','Car', 'Two-wheeler', 'Road'}, ...
         'FontSize', 16, 'FontColor', white);
     assetList.BackgroundColor = panel;
     assetList.ValueChangedFcn = @(s,e) onAssetSelected(fig, e);
+    
+    % Increased space after asset list (20px) to reduce congestion before "Add Asset" button
+    currentY = y_assetList - 20; 
+
+    % 4. Add Asset Button (Sized to match right panel)
+    y_addAssetBtn = currentY - LEFT_BTN_H;
+    addAssetBtn = uibutton(leftPanel, 'push', 'Text', 'Add Asset', ...
+        'Position', [LEFT_BTN_X y_addAssetBtn LEFT_BTN_W LEFT_BTN_H], 'FontSize', 17, 'FontWeight', 'normal');
+    addAssetBtn.BackgroundColor = primary; addAssetBtn.FontColor = black;
+    
+    currentY = y_addAssetBtn - REGULAR_GAP; % Increased gap before next section
+
+    % 5. Label: Scene Templates
+    y_lblScenes = currentY - LEFT_LABEL_H;
+    lblScenes = uilabel(leftPanel, 'Text', 'Scene Templates', 'Position', [LEFT_BTN_X y_lblScenes LEFT_BTN_W LEFT_LABEL_H], 'FontSize', 16, 'FontColor', white);
+    
+    currentY = y_lblScenes - SMALL_GAP;
+
+    % 6. Dropdown: Scene Templates
+    y_ddScenes = currentY - DD_H;
+    predefinedTemplates = {'Bengaluru Traffic Crossing (Morning Peak)', 'Delhi Roundabout Junction (Weekday Off-Peak)', 'Chennai Urban Arterial (Weekend)', 'Generic Indian Highway'};
+    ddScenes = uidropdown(leftPanel, 'Items', predefinedTemplates, 'Position', [LEFT_BTN_X y_ddScenes LEFT_BTN_W DD_H], 'BackgroundColor', panel, 'FontColor', white);
+    ddScenes.ValueChangedFcn = @(s,e) onSceneSelected(fig, e);
+
     % --- END ASSET UI ---
     
-    % Load Scene Dropdown
-    lblScenes = uilabel(leftPanel, 'Text', 'Scene Templates', 'Position', [20 panelH-440 260 22], 'FontSize', 16, 'FontColor', white);
-    
-    predefinedTemplates = {'Bengaluru Traffic Crossing (Morning Peak)', 'Delhi Roundabout Junction (Weekday Off-Peak)', 'Chennai Urban Arterial (Weekend)', 'Generic Indian Highway'};
-    ddScenes = uidropdown(leftPanel, 'Items', predefinedTemplates, 'Position', [20 panelH-480 260 36], 'BackgroundColor', panel, 'FontColor', white);
-    ddScenes.ValueChangedFcn = @(s,e) onSceneSelected(fig, e);
-    
-    % Log Panel at bottom of leftPanel
-    logLeftPanel = uipanel(leftPanel, 'Position', [20 20 260 160], 'Title', 'Log', 'BackgroundColor', panel, 'FontSize', 16, 'FontWeight', 'bold');
+    % Log Panel at bottom of leftPanel (Position remains fixed relative to bottom)
+    logLeftPanel = uipanel(leftPanel, 'Position', [LEFT_BTN_X 20 LEFT_BTN_W 160], 'Title', 'Log', 'BackgroundColor', panel, 'FontSize', 16, 'FontWeight', 'bold');
     logLeftPanel.ForegroundColor = white;
-    logArea = uitextarea(logLeftPanel, 'Position', [8 8 244 120], 'Editable', 'off', 'FontColor', grayTxt, 'Value', {'[--] App started'}, 'BackgroundColor', bg);
+    logArea = uitextarea(logLeftPanel, 'Position', [8 8 LEFT_BTN_W-16 120], 'Editable', 'off', 'FontColor', grayTxt, 'Value', {'[--] App started'}, 'BackgroundColor', bg);
     % ---------------------------
     % CENTER Panel content
     % ---------------------------
@@ -103,51 +155,22 @@ function india_twin_builder_app()
                          'RowName', {}, 'Data', []);
     assetTable.BackgroundColor = panel;
     assetTable.ForegroundColor = white;
-   
+    % ---------------------------
+    % RIGHT Panel content 
+    % ---------------------------
     
     % Common dimensions
     BTN_W = 220;
     BTN_H = 48;
-    BTN_X = 20;
+    % Corrected to be centered on 280px panel: (280 - 220) / 2 = 30
+    BTN_X = 30; 
     LABEL_H = 22;
-    DD_H = 36;
-    REGULAR_GAP = 24; % Gap for labels/dropdowns
-    BUTTON_GAP = 36; % Increased gap for buttons (was 24)
+    BUTTON_GAP = 36; 
 
-    % 1. Simulation Heading (Fixed at the top)
-    simLabel = uilabel(rightPanel, 'Text', 'Simulation', ...
-        'Position', [BTN_X panelH-50 BTN_W 36], 'FontSize', 22, 'FontWeight', 'bold', 'FontColor', white);
-    
-    % Current Y position, starting after the Simulation label (36px height) and a small gap (10px)
-    currentY = panelH - 50 - 36 - 10; % REDUCED GAP (10)
+    % Current Y position, starting high up
+    currentY = panelH - 50; 
 
-    % 2. Time of day (Label + Dropdown)
-    y_lblTime = currentY - LABEL_H;
-    lblTime = uilabel(rightPanel, 'Text', 'Time of day', ...
-        'Position', [BTN_X y_lblTime BTN_W LABEL_H], 'FontSize', 16, 'FontColor', white);
-    
-    currentY = y_lblTime - REGULAR_GAP;
-
-    y_ddTime = currentY - DD_H;
-    ddTime = uidropdown(rightPanel, 'Items', {'Day','Dawn','Night'}, 'Value', 'Day', ...
-        'Position', [BTN_X y_ddTime BTN_W DD_H], 'BackgroundColor', panel, 'FontColor', white);
-
-    currentY = y_ddTime - REGULAR_GAP;
-
-    % 3. Weather (Label + Dropdown)
-    y_lblWeather = currentY - LABEL_H;
-    lblWeather = uilabel(rightPanel, 'Text', 'Weather', ...
-        'Position', [BTN_X y_lblWeather BTN_W LABEL_H], 'FontSize', 16, 'FontColor', white);
-
-    currentY = y_lblWeather - REGULAR_GAP;
-    
-    y_ddWeather = currentY - DD_H;
-    ddWeather = uidropdown(rightPanel, 'Items', {'Clear','Rain','Fog'}, 'Value', 'Clear', ...
-        'Position', [BTN_X y_ddWeather BTN_W DD_H], 'BackgroundColor', panel, 'FontColor', white);
-
-    currentY = y_ddWeather - BUTTON_GAP; % INCREASED GAP (36) before first button
-
-    % 4. Create Custom Scenario (Button)
+    % 1. Create Custom Scenario (Button)
     y_createScenarioBtn = currentY - BTN_H;
     createScenarioBtn = uibutton(rightPanel, 'push', 'Text', 'Create Custom Scenario', ...
         'Position', [BTN_X y_createScenarioBtn BTN_W BTN_H], 'FontSize', 17);
@@ -155,9 +178,17 @@ function india_twin_builder_app()
     createScenarioBtn.FontColor = black;
     createScenarioBtn.ButtonPushedFcn = @(s,e) onCreateCustomScenario(fig);
 
-    currentY = y_createScenarioBtn - BUTTON_GAP; % INCREASED GAP (36) after first button
+    currentY = y_createScenarioBtn - BUTTON_GAP;
 
-    % 5. Import Photo (Button)
+    % --- NEW AI SECTION START (REARRANGED) ---
+    % 2. AI Options Label
+    y_lblAI = currentY - LABEL_H;
+    lblAI = uilabel(rightPanel, 'Text', 'AI Options', ...
+        'Position', [BTN_X y_lblAI BTN_W LABEL_H], 'FontSize', 16, 'FontWeight', 'bold', 'FontColor', white);
+    
+    currentY = y_lblAI - BUTTON_GAP; % Increased gap after label for button placement
+
+    % 3. Import Photo (Button) - MOVED HERE
     y_importPhotoBtn = currentY - BTN_H;
     importPhotoBtn = uibutton(rightPanel, 'push', 'Text', 'Import Photo', ...
         'Position', [BTN_X y_importPhotoBtn BTN_W BTN_H], 'FontSize', 17, ...
@@ -165,24 +196,55 @@ function india_twin_builder_app()
     importPhotoBtn.BackgroundColor = accent; 
     importPhotoBtn.FontColor = black;
 
-    currentY = y_importPhotoBtn - BUTTON_GAP; % INCREASED GAP (36) after second button
+    currentY = y_importPhotoBtn - BUTTON_GAP;
 
-    % 6. Export to RoadRunner (Button)
+    % 4. Prompt Section Label
+    y_lblPrompt = currentY - LABEL_H;
+    lblPrompt = uilabel(rightPanel, 'Text', 'Enter Prompt', ...
+        'Position', [BTN_X y_lblPrompt BTN_W LABEL_H], 'FontSize', 14, 'FontColor', grayTxt);
+    
+    currentY = y_lblPrompt - 5; % Small gap
+
+    % 5. Prompt Text Area (100px high)
+    promptH = 100;
+    y_aiPromptArea = currentY - promptH;
+    aiPromptArea = uitextarea(rightPanel, 'Position', [BTN_X y_aiPromptArea BTN_W promptH], ...
+                              'Editable', 'on', 'FontColor', white, 'Value', {'e.g. Add 3 aggressive rickshaws and 5 potholes to the map.'}, ...
+                              'BackgroundColor', bg);
+    
+    currentY = y_aiPromptArea - BUTTON_GAP; % Gap before generate button
+
+    % 6. Generate a Scenario Button (Renamed from Generative AI)
+    y_generativeAIBtn = currentY - BTN_H;
+    generativeAIBtn = uibutton(rightPanel, 'push', 'Text', 'Generate a Scenario', ...
+        'Position', [BTN_X y_generativeAIBtn BTN_W BTN_H], 'FontSize', 17);
+    generativeAIBtn.BackgroundColor = primary; 
+    generativeAIBtn.FontColor = black;
+    generativeAIBtn.ButtonPushedFcn = @(s,e) onGenerativeAI(fig); 
+
+    currentY = y_generativeAIBtn - BUTTON_GAP; 
+    % --- NEW AI SECTION END ---
+
+    % 7. Export to RoadRunner (Button)
     y_expBtn = currentY - BTN_H;
     expBtn = uibutton(rightPanel, 'push', 'Text', 'Export to RoadRunner', ...
         'Position', [BTN_X y_expBtn BTN_W BTN_H], 'FontSize', 17);
     expBtn.BackgroundColor = primary; expBtn.FontColor = black;
     expBtn.ButtonPushedFcn = @(s,e) onExport(fig);
 
-    currentY = y_expBtn - BUTTON_GAP; % INCREASED GAP (36) after third button
+    currentY = y_expBtn - BUTTON_GAP;
 
-    % 7. Run RoadRunner (Button)
+    % 8. Run RoadRunner (Button)
     y_runBtn = currentY - BTN_H;
     runBtn = uibutton(rightPanel, 'push', 'Text', 'Run RoadRunner', ...
         'Position', [BTN_X y_runBtn BTN_W BTN_H], 'FontSize', 17);
     runBtn.BackgroundColor = primary; runBtn.FontColor = black;
     runBtn.ButtonPushedFcn = @(s,e) onRun(fig);
     
+    % ---------------------------
+    % Attach callbacks and store handles
+    % ---------------------------
+    % store handles in appdata
     appdata.ax = ax; 
     appdata.logArea = logArea; 
     appdata.assetTable = assetTable;
@@ -190,6 +252,7 @@ function india_twin_builder_app()
     appdata.RoadData = []; % Initializing RoadData in appdata
     appdata.LoadedFile = ''; % Initializing LoadedFile in appdata
     appdata.mapBg = mapBg;
+    appdata.aiPromptArea = aiPromptArea; % NEW: Add prompt area handle
     setappdata(fig, 'AppData', appdata);
     importBtn.ButtonPushedFcn = @(s,e) onImport(fig);
     addAssetBtn.ButtonPushedFcn = @(s,e) onAddAsset(fig, assetList);
@@ -201,6 +264,35 @@ function india_twin_builder_app()
     ddScenes.Value = predefinedTemplates{1};
 end
 
+% ---------------------------
+% NEW CALLBACK FOR GENERATIVE AI (Unchanged functionality)
+% ---------------------------
+function onGenerativeAI(fig)
+    appdata = getappdata(fig, 'AppData');
+    logArea = appdata.logArea;
+    
+    % Check if the handle was stored (it should be now)
+    if isfield(appdata, 'aiPromptArea')
+        aiPromptArea = appdata.aiPromptArea;
+        promptText = aiPromptArea.Value{1};
+        
+        appendLog(logArea, 'Generative AI: Processing prompt...');
+        appendLog(logArea, ['Prompt: "' promptText '"']);
+        
+        % Placeholder logic: in a real application, this would call a Python/external AI service
+        if contains(promptText, 'rickshaws', 'IgnoreCase', true)
+            appendLog(logArea, 'AI Simulation: Generated 3 aggressive rickshaws based on prompt.');
+        else
+            appendLog(logArea, 'AI Simulation: Scenario generation logic triggered (placeholder).');
+        end
+        
+    else
+        appendLog(logArea, 'ERROR: AI Prompt Area handle missing.');
+    end
+end
+% ---------------------------
+% Existing Callbacks (Functionality Unchanged)
+% ---------------------------
 function onAssetSelected(fig, event)
     appdata = getappdata(fig, 'AppData');
     logArea = appdata.logArea;
