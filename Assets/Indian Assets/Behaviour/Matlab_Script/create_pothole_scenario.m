@@ -18,7 +18,7 @@ POTHOLE_START_DISTANCE = 70; % meters
 POTHOLE_SPACING = 60; % meters
 
 % *** This path now directly controls which project RoadRunner will use ***
-ROADRUNNER_PROJECT_FOLDER = 'C:\Users\Shreyas Hegde\Desktop\kyaMATLAB';
+ROADRUNNER_PROJECT_FOLDER = 'C:\codes\SIH\kyaMATLAB';
 
 disp('--- Starting RoadRunner Scenario Creation (Live Hybrid Workflow) ---');
 

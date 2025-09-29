@@ -5,13 +5,14 @@ function india_twin_builder_app()
     % ---------------------------
     % Colors (hex -> rgb)
     % ---------------------------
-    bg      = hex2rgb('#0C1B3D');    % background dark
-    panel   = hex2rgb('#15294C');    % panel bg
-    primary = hex2rgb('#2B7FFF');    % primary button
-    accent  = hex2rgb('#1E62D0');    % accent button
-    white   = [1 1 1];
-    grayTxt = hex2rgb('#A3B2CC');
-    mapBg   = hex2rgb('#213753');    % NEW: Blueish background for map
+    bg      = hex2rgb('#1E1E1E');
+    panel   = hex2rgb('#2D2D2D');
+    primary = hex2rgb('#6ad7f5ff');
+    accent  = hex2rgb('#6ad7f5ff');
+    white   = hex2rgb('#E0E0E0');
+    grayTxt = hex2rgb('#8A8A8A');
+    mapBg   = hex2rgb('#2D2D2D');
+    black   = [0 0 0];
     
     % ---------------------------
     % Get Screen Size for dynamic layout
@@ -56,12 +57,12 @@ function india_twin_builder_app()
     % Import button
     importBtn = uibutton(leftPanel, 'push', 'Text', 'Import map', ...
         'Position', [20 panelH-84 260 64], 'FontSize', 20, 'FontWeight', 'normal');
-    importBtn.BackgroundColor = primary; importBtn.FontColor = white;
+    importBtn.BackgroundColor = primary; importBtn.FontColor = black;
     
     % --- BEGIN ASSET UI ---
     addAssetBtn = uibutton(leftPanel, 'push', 'Text', 'Add Asset', ...
         'Position', [20 panelH-168 260 64], 'FontSize', 20, 'FontWeight', 'normal');
-    addAssetBtn.BackgroundColor = primary; addAssetBtn.FontColor = white;
+    addAssetBtn.BackgroundColor = primary; addAssetBtn.FontColor = black;
     lblAssets = uilabel(leftPanel, 'Text', 'Select an Asset', ...
         'Position', [20 panelH-210 260 22], 'FontSize', 16, 'FontColor', white);
     
@@ -69,7 +70,7 @@ function india_twin_builder_app()
         'Position', [20 panelH-400 260 180], ...
         'Items', {'Pothole','Barricade','Rickshaw','Car', 'Two-wheeler', 'Road'}, ...
         'FontSize', 16, 'FontColor', white);
-    assetList.BackgroundColor = hex2rgb('#213753');
+    assetList.BackgroundColor = panel;
     assetList.ValueChangedFcn = @(s,e) onAssetSelected(fig, e);
     % --- END ASSET UI ---
     
@@ -77,12 +78,13 @@ function india_twin_builder_app()
     lblScenes = uilabel(leftPanel, 'Text', 'Scene Templates', 'Position', [20 panelH-440 260 22], 'FontSize', 16, 'FontColor', white);
     
     predefinedTemplates = {'Bengaluru Traffic Crossing (Morning Peak)', 'Delhi Roundabout Junction (Weekday Off-Peak)', 'Chennai Urban Arterial (Weekend)', 'Generic Indian Highway'};
-    ddScenes = uidropdown(leftPanel, 'Items', predefinedTemplates, 'Position', [20 panelH-480 260 36], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', white);
+    ddScenes = uidropdown(leftPanel, 'Items', predefinedTemplates, 'Position', [20 panelH-480 260 36], 'BackgroundColor', panel, 'FontColor', white);
     ddScenes.ValueChangedFcn = @(s,e) onSceneSelected(fig, e);
     
     % Log Panel at bottom of leftPanel
     logLeftPanel = uipanel(leftPanel, 'Position', [20 20 260 160], 'Title', 'Log', 'BackgroundColor', panel, 'FontSize', 16, 'FontWeight', 'bold');
-    logArea = uitextarea(logLeftPanel, 'Position', [8 8 244 120], 'Editable', 'off', 'FontColor', grayTxt, 'Value', {'[--] App started'});
+    logLeftPanel.ForegroundColor = white;
+    logArea = uitextarea(logLeftPanel, 'Position', [8 8 244 120], 'Editable', 'off', 'FontColor', grayTxt, 'Value', {'[--] App started'}, 'BackgroundColor', bg);
     % ---------------------------
     % CENTER Panel content
     % ---------------------------
@@ -92,7 +94,7 @@ function india_twin_builder_app()
     
     axesH = panelH - 50 - 36 - 20 - 150 - 18;
     ax = uiaxes(centerPanel, 'Position', [18 18+150 centerW-36 axesH], 'BackgroundColor', mapBg);
-    ax.XTick = []; ax.YTick = []; ax.Box = 'on';
+    ax.XTick = []; ax.YTick = []; ax.Box = 'on'; ax.XColor = grayTxt; ax.YColor = grayTxt;
     % Initial preview content
     cla(ax);
     text(ax, 0.5, 0.5, 'Run RoadRunner to begin', 'HorizontalAlignment', 'center', ...
@@ -102,35 +104,35 @@ function india_twin_builder_app()
     
     % Asset table at bottom of center panel
     assetTablePanel = uipanel(centerPanel, 'Position', [18 18 centerW-36 150], ...
-                              'BackgroundColor', hex2rgb('#213753'), 'Title', 'Assets Added', ...
+                              'BackgroundColor', panel, 'Title', 'Assets Added', ...
                               'FontWeight', 'bold', 'FontSize', 14);
-    
+    assetTablePanel.ForegroundColor = white; % Set title color
     assetTable = uitable(assetTablePanel, 'Position', [10 10 centerW-56 120], ...
                          'ColumnName', {'Asset', 'Property 1', 'Property 2', 'Property 3'}, ...
                          'ColumnFormat', {'char', 'char', 'char', 'char'}, ...
                          'ColumnWidth', {'auto', 'auto', 'auto', 'auto'}, ...
                          'RowName', {}, 'Data', []);
-    assetTable.BackgroundColor = hex2rgb('#15294C');
+    assetTable.BackgroundColor = panel;
     assetTable.ForegroundColor = white;
     % ---------------------------
     % RIGHT Panel content
     % ---------------------------
     simLabel = uilabel(rightPanel, 'Text', 'Simulation', 'Position', [20 panelH-50 220 36], 'FontSize', 22, 'FontWeight', 'bold', 'FontColor', white);
     lblTime = uilabel(rightPanel, 'Text', 'Time of day', 'Position', [20 panelH-90 120 22], 'FontSize', 16, 'FontColor', white);
-    ddTime = uidropdown(rightPanel, 'Items', {'Day','Dawn','Night'}, 'Value', 'Day', 'Position', [20 panelH-130 220 36]);
+    ddTime = uidropdown(rightPanel, 'Items', {'Day','Dawn','Night'}, 'Value', 'Day', 'Position', [20 panelH-130 220 36], 'BackgroundColor', panel, 'FontColor', white);
     lblWeather = uilabel(rightPanel, 'Text', 'Weather', 'Position', [20 panelH-168 120 22], 'FontSize', 16, 'FontColor', white);
-    ddWeather = uidropdown(rightPanel, 'Items', {'Clear','Rain','Fog'}, 'Value', 'Clear', 'Position', [20 panelH-208 220 36]);
+    ddWeather = uidropdown(rightPanel, 'Items', {'Clear','Rain','Fog'}, 'Value', 'Clear', 'Position', [20 panelH-208 220 36], 'BackgroundColor', panel, 'FontColor', white);
     
     % NEW: Add a new button for custom scenario
     createScenarioBtn = uibutton(rightPanel, 'push', 'Text', 'Create Custom Scenario', ...
         'Position', [20 panelH-285 220 48], 'FontSize', 17);
     createScenarioBtn.BackgroundColor = accent; 
-    createScenarioBtn.FontColor = white;
+    createScenarioBtn.FontColor = black;
     createScenarioBtn.ButtonPushedFcn = @(s,e) onCreateCustomScenario(fig);
     % lblFidelity and ddFidelity are removed as per request.
     % New Sections for future use
     lblSettings = uilabel(rightPanel, 'Text', 'Settings', 'Position', [20 panelH-324 120 22], 'FontSize', 16, 'FontColor', white);
-    settingsPanel = uipanel(rightPanel, 'Position', [20 panelH-390 220 60], 'BackgroundColor', hex2rgb('#213753'), 'BorderType', 'none');
+    settingsPanel = uipanel(rightPanel, 'Position', [20 panelH-390 220 60], 'BackgroundColor', panel, 'BorderType', 'none');
   % -- UI and label change as requested --
 settingsBtn = uibutton(settingsPanel, 'push', ...
     'Text', 'Import Video', ...
@@ -138,11 +140,11 @@ settingsBtn = uibutton(settingsPanel, 'push', ...
     'FontSize', 17, ...
     'ButtonPushedFcn', @(s,e) onImportVideo(fig, logArea));
 settingsBtn.BackgroundColor = accent; 
-settingsBtn.FontColor = white;
+settingsBtn.FontColor = black;
 lblBatch = uilabel(rightPanel, 'Text', 'Batch Operations', 'Position', [20 panelH-420 200 22], 'FontSize', 16, 'FontColor', white);
 batchPanel = uipanel(rightPanel, ...
     'Position', [20 panelH-490 220 60], ...
-    'BackgroundColor', hex2rgb('#213753'), ...
+    'BackgroundColor', panel, ...
     'BorderType', 'none');
    % -- UI and label change as requested --
 batchBtn = uibutton(batchPanel, 'push', ...
@@ -151,11 +153,11 @@ batchBtn = uibutton(batchPanel, 'push', ...
     'FontSize', 17, ...
     'ButtonPushedFcn', @(s,e) onImportPhoto(fig, logArea));
 batchBtn.BackgroundColor = accent; 
-batchBtn.FontColor = white;
+batchBtn.FontColor = black;
     expBtn = uibutton(rightPanel, 'push', 'Text', 'Export to RoadRunner', 'Position', [20 112 220 48], 'FontSize', 17);
-    expBtn.BackgroundColor = primary; expBtn.FontColor = white;
+    expBtn.BackgroundColor = primary; expBtn.FontColor = black;
     runBtn = uibutton(rightPanel, 'push', 'Text', 'Run RoadRunner', 'Position', [20 42 220 48], 'FontSize', 17);
-    runBtn.BackgroundColor = primary; runBtn.FontColor = white;
+    runBtn.BackgroundColor = primary; runBtn.FontColor = black;
     % ---------------------------
     % Attach callbacks
     % ---------------------------
@@ -188,47 +190,57 @@ function onAssetSelected(fig, event)
     logArea = appdata.logArea;
     assetType = event.Value;
     
+
+    panel   = hex2rgb('#2D2D2D');
+    grayTxt = hex2rgb('#8A8A8A');
+    primary = hex2rgb('#6ad7f5ff');
+    black = [0 0 0];
+    
     appendLog(logArea, ['Selected asset type: ' assetType]);
     
     popFig = uifigure('Name', ['Configure ' assetType], 'Position', [0 0 400 300], 'Visible', 'off');
     centerfig(popFig);
     delete(popFig.Children);
     
-    popPanel = uipanel(popFig, 'Position', [10 10 380 280], 'BorderType', 'none', 'BackgroundColor', hex2rgb('#15294C'));
+    popPanel = uipanel(popFig, 'Position', [10 10 380 280], 'BorderType', 'none', 'BackgroundColor', panel);
     
     switch assetType
         case 'Pothole'
-            lbl1 = uilabel(popPanel, 'Text', 'Hole Width:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl1 = uilabel(popPanel, 'Text', 'Hole Width:', 'Position', [20 220 120 22], 'FontColor', grayTxt);
             ef1 = uieditfield(popPanel, 'numeric', 'Position', [140 220 200 28]);
-            lbl2 = uilabel(popPanel, 'Text', 'Area:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl2 = uilabel(popPanel, 'Text', 'Area:', 'Position', [20 180 120 22], 'FontColor', grayTxt);
             ef2 = uieditfield(popPanel, 'numeric', 'Position', [140 180 200 28]);
             
             applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.BackgroundColor = primary; applyBtn.FontColor = black;
             applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, ef2);
         case 'Barricade'
-            lbl1 = uilabel(popPanel, 'Text', 'Type:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl1 = uilabel(popPanel, 'Text', 'Type:', 'Position', [20 220 120 22], 'FontColor', grayTxt);
             dd1 = uidropdown(popPanel, 'Items', {'Single', 'Multiple'}, 'Position', [140 220 200 28]);
-            lbl2 = uilabel(popPanel, 'Text', 'Distance:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl2 = uilabel(popPanel, 'Text', 'Distance:', 'Position', [20 180 120 22], 'FontColor', grayTxt);
             ef2 = uieditfield(popPanel, 'numeric', 'Position', [140 180 200 28]);
             
             applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.BackgroundColor = primary; applyBtn.FontColor = black;
             applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, dd1, ef2);
             
         case {'Rickshaw', 'Car', 'Two-wheeler'}
-            lbl1 = uilabel(popPanel, 'Text', 'Vehicle Count:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl1 = uilabel(popPanel, 'Text', 'Vehicle Count:', 'Position', [20 220 120 22], 'FontColor', grayTxt);
             ef1 = uieditfield(popPanel, 'numeric', 'Position', [140 220 200 28]);
-            lbl2 = uilabel(popPanel, 'Text', 'Behaviour:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl2 = uilabel(popPanel, 'Text', 'Behaviour:', 'Position', [20 180 120 22], 'FontColor', grayTxt);
             dd1 = uidropdown(popPanel, 'Items', {'Normal', 'Aggressive', 'Erratic'}, 'Position', [140 180 200 28]);
-            lbl3 = uilabel(popPanel, 'Text', 'Vehicle Color:', 'Position', [20 140 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl3 = uilabel(popPanel, 'Text', 'Vehicle Color:', 'Position', [20 140 120 22], 'FontColor', grayTxt);
             dd2 = uidropdown(popPanel, 'Items', {'Red', 'Blue', 'Green'}, 'Position', [140 140 200 28]);
             applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.BackgroundColor = primary; applyBtn.FontColor = black;
             applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, dd1, dd2);
         case 'Road'
-            lbl1 = uilabel(popPanel, 'Text', 'Road Width:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl1 = uilabel(popPanel, 'Text', 'Road Width:', 'Position', [20 220 120 22], 'FontColor', grayTxt);
             ef1 = uieditfield(popPanel, 'numeric', 'Position', [140 220 200 28]);
-            lbl2 = uilabel(popPanel, 'Text', 'Number of Lanes:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+            lbl2 = uilabel(popPanel, 'Text', 'Number of Lanes:', 'Position', [20 180 120 22], 'FontColor', grayTxt);
             ef2 = uieditfield(popPanel, 'numeric', 'Position', [140 180 200 28]);
             applyBtn = uibutton(popFig, 'push', 'Text', 'Apply', 'Position', [100 20 200 40]);
+            applyBtn.BackgroundColor = primary; applyBtn.FontColor = black;
             applyBtn.ButtonPushedFcn = @(s,e) onApply_AddAsset(fig, popFig, assetType, ef1, ef2);
     end
     
@@ -438,8 +450,8 @@ function updatePreview(fig)
         ax.YLim = [min_y - pad, max_y + pad];
         
         for i = 1:numel(roadData.x)
-            plot(ax, roadData.x{i}, roadData.y{i}, 'Color', hex2rgb('#3A4E6C'), 'LineWidth', 15);
-            plot(ax, roadData.x{i}, roadData.y{i}, '--', 'Color', hex2rgb('#A3B2CC'), 'LineWidth', 2);
+            plot(ax, roadData.x{i}, roadData.y{i}, 'Color', hex2rgb('#666666'), 'LineWidth', 15);
+            plot(ax, roadData.x{i}, roadData.y{i}, '--', 'Color', hex2rgb('#E0E0E0'), 'LineWidth', 2);
         end
         
         % Plot all existing assets from the appdata struct
@@ -475,7 +487,7 @@ function onSceneSelected(fig, event)
     
     cla(ax);
     text(ax, 0.5, 0.5, 'Loading Scene...', 'HorizontalAlignment', 'center', ...
-         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#8A8A8A'));
     axis(ax, 'off');
     ax.XLim = [0 1]; ax.YLim = [0 1];
     drawnow;
@@ -489,7 +501,7 @@ function onSceneSelected(fig, event)
     appendLog(logArea, ['Calling Python backend to load scene: ' selectedSceneFile]);
     
     try
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -526,7 +538,7 @@ function onImport(fig)
     
     cla(ax);
     text(ax, 0.5, 0.5, 'Waiting for file selection...', 'HorizontalAlignment', 'center', ...
-         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#8A8A8A'));
     axis(ax, 'off');
     ax.XLim = [0 1]; ax.YLim = [0 1];
     drawnow;
@@ -539,7 +551,7 @@ function onImport(fig)
         appendLog(logArea, 'Import canceled.');
         cla(ax);
         text(ax, 0.5, 0.5, 'Import canceled.', 'HorizontalAlignment', 'center', ...
-             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#8A8A8A'));
         axis(ax, 'off');
         ax.XLim = [0 1]; ax.YLim = [0 1];
         return;
@@ -553,7 +565,7 @@ function onImport(fig)
         appendLog(logArea, 'Reading file...');
         cla(ax);
         text(ax, 0.5, 0.5, 'Parsing Map Data...', 'HorizontalAlignment', 'center', ...
-             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+             'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#8A8A8A'));
         axis(ax, 'off');
         ax.XLim = [0 1]; ax.YLim = [0 1];
         drawnow;
@@ -630,7 +642,7 @@ function onImport(fig)
             appendLog(logArea, 'No road data found in file.');
             cla(ax);
             text(ax, 0.5, 0.5, 'No Road Data Found', 'HorizontalAlignment', 'center', ...
-                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+                 'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#8A8A8A'));
             axis(ax, 'off');
             ax.XLim = [0 1]; ax.YLim = [0 1];
         else
@@ -670,13 +682,13 @@ function onExport(fig)
     
     cla(ax);
     text(ax, 0.5, 0.5, 'Exporting Map...', 'HorizontalAlignment', 'center', ...
-         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#8A8A8A'));
     axis(ax, 'off');
     ax.XLim = [0 1]; ax.YLim = [0 1];
     drawnow;
     
     try
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -723,13 +735,13 @@ function onRun(fig)
     
     cla(ax);
     text(ax, 0.5, 0.5, 'Launching RoadRunner...', 'HorizontalAlignment', 'center', ...
-         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#A3B2CC'));
+         'FontSize', 18, 'FontWeight', 'bold', 'Color', hex2rgb('#8A8A8A'));
     axis(ax, 'off');
     ax.XLim = [0 1]; ax.YLim = [0 1];
     drawnow;
 
     try
-        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
+        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -778,6 +790,12 @@ function onCreateCustomScenario(fig)
     logArea = appdata.logArea;
     appendLog(logArea, 'Creating custom scenario...');
 
+    % Define colors for popup
+    panel = hex2rgb('#2D2D2D');
+    grayTxt = hex2rgb('#8A8A8A');
+    primary = hex2rgb('#6ad7f5ff');
+    black = [0 0 0];
+
     % Define the predefined scenes from the image provided
     predefinedScenes = {'Bridge', 'FourWaySignal', 'FourWayStop', 'ParkingGarage', ...
                         'SanAntonio', 'ScenarioBasic', 'SimpleBankedRoad', 'SimpleCurve', ...
@@ -788,38 +806,38 @@ function onCreateCustomScenario(fig)
     centerfig(popFig);
 
     % Main panel for the pop-up
-    popPanel = uipanel(popFig, 'Position', [10 10 430 430], 'BorderType', 'none', 'BackgroundColor', hex2rgb('#15294C'));
+    popPanel = uipanel(popFig, 'Position', [10 10 430 430], 'BorderType', 'none', 'BackgroundColor', panel);
 
     % --- UI Elements for the Pop-up ---
     % Scene Dropdown
-    uilabel(popPanel, 'Text', 'Select Scene:', 'Position', [20 380 120 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 14);
-    ddScene = uidropdown(popPanel, 'Items', predefinedScenes, 'Position', [150 380 250 28], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', hex2rgb('#A3B2CC'));
+    uilabel(popPanel, 'Text', 'Select Scene:', 'Position', [20 380 120 22], 'FontColor', grayTxt, 'FontSize', 14);
+    ddScene = uidropdown(popPanel, 'Items', predefinedScenes, 'Position', [150 380 250 28], 'BackgroundColor', panel, 'FontColor', grayTxt);
 
     % Traffic Percentage Sliders
-    uilabel(popPanel, 'Text', 'Traffic Percentages', 'Position', [20 330 200 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 16, 'FontWeight', 'bold');
-    uilabel(popPanel, 'Text', 'Two-wheeler:', 'Position', [20 300 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    uilabel(popPanel, 'Text', 'Traffic Percentages', 'Position', [20 330 200 22], 'FontColor', grayTxt, 'FontSize', 16, 'FontWeight', 'bold');
+    uilabel(popPanel, 'Text', 'Two-wheeler:', 'Position', [20 300 120 22], 'FontColor', grayTxt);
     sldTwoWheeler = uislider(popPanel, 'Position', [150 300 250 3], 'Limits', [0 100], 'Value', 25);
-    uilabel(popPanel, 'Text', 'Rickshaw:', 'Position', [20 260 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    uilabel(popPanel, 'Text', 'Rickshaw:', 'Position', [20 260 120 22], 'FontColor', grayTxt);
     sldRickshaw = uislider(popPanel, 'Position', [150 260 250 3], 'Limits', [0 100], 'Value', 25);
-    uilabel(popPanel, 'Text', 'Bus:', 'Position', [20 220 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    uilabel(popPanel, 'Text', 'Bus:', 'Position', [20 220 120 22], 'FontColor', grayTxt);
     sldBus = uislider(popPanel, 'Position', [150 220 250 3], 'Limits', [0 100], 'Value', 10);
-    uilabel(popPanel, 'Text', 'Car:', 'Position', [20 180 120 22], 'FontColor', hex2rgb('#A3B2CC'));
+    uilabel(popPanel, 'Text', 'Car:', 'Position', [20 180 120 22], 'FontColor', grayTxt);
     sldCar = uislider(popPanel, 'Position', [150 180 250 3], 'Limits', [0 100], 'Value', 40);
 
     % Driver Behavior Dropdown
-    uilabel(popPanel, 'Text', 'Driver Behavior:', 'Position', [20 130 120 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 14);
-    ddBehavior = uidropdown(popPanel, 'Items', {'Cautious', 'Erratic', 'Aggressive'}, 'Position', [150 130 250 28], 'BackgroundColor', hex2rgb('#213753'), 'FontColor', hex2rgb('#A3B2CC'));
+    uilabel(popPanel, 'Text', 'Driver Behavior:', 'Position', [20 130 120 22], 'FontColor', grayTxt, 'FontSize', 14);
+    ddBehavior = uidropdown(popPanel, 'Items', {'Cautious', 'Erratic', 'Aggressive'}, 'Position', [150 130 250 28], 'BackgroundColor', panel, 'FontColor', grayTxt);
 
     % Pothole Percentage
-    uilabel(popPanel, 'Text', 'Pothole %:', 'Position', [20 90 120 22], 'FontColor', hex2rgb('#A3B2CC'), 'FontSize', 14);
+    uilabel(popPanel, 'Text', 'Pothole %:', 'Position', [20 90 120 22], 'FontColor', grayTxt, 'FontSize', 14);
     efPothole = uieditfield(popPanel, 'numeric', 'Position', [150 90 250 28]);
     efPothole.Value = 10; % Default value
 
     % "Generate" Button
     generateBtn = uibutton(popFig, 'push', 'Text', 'Generate Scenario', ...
         'Position', [125 30 200 40]);
-    generateBtn.BackgroundColor = hex2rgb('#2B7FFF');
-    generateBtn.FontColor = [1 1 1];
+    generateBtn.BackgroundColor = primary;
+    generateBtn.FontColor = black;
     generateBtn.ButtonPushedFcn = @(s,e) onGenerateScenario(popFig, ddScene, sldTwoWheeler, sldRickshaw, sldBus, sldCar, ddBehavior, efPothole);
 
     popFig.Visible = 'on';
