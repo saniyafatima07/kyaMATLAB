@@ -14,29 +14,21 @@ function india_twin_builder_app()
     mapBg   = hex2rgb('#2D2D2D');
     black   = [0 0 0];
     
-    % ---------------------------
-    % Get Screen Size for dynamic layout
-    % ---------------------------
     scr_sz = get(0, 'ScreenSize');
     figW = scr_sz(3);
     figH = scr_sz(4);
-    % ---------------------------
-    % Create UIFigure (Full-screen)
-    % ---------------------------
-    fig = uifigure('Name','SimuTwin 🗺️', ...
+    fig = uifigure('Name','SimuTwin', ...
                    'Position',[1 1 figW figH], ...
                    'Color', bg, 'Resize', 'off');
-    % Title bar area (large)
+    
     topH = 96;
     topPanel = uipanel(fig, 'Position', [0 figH-topH figW topH], ...
                        'BackgroundColor', panel, 'BorderType', 'none');
-    % Title label centered
-    titleLabel = uilabel(topPanel, 'Text', '‍SimuTwin 🗺', ...
-        'Position', [0 18 figW 60], 'HorizontalAlignment', 'center', ...
-        'FontSize', 30, 'FontWeight', 'bold', 'FontColor', white, 'BackgroundColor', panel);
-    % ---------------------------
-    % Panels: Left / Center / Right
-    % ---------------------------
+    
+    titleLabel = uilabel(topPanel, 'Text', 'SimuTwin', ...
+        'Position', [0 18 figW 60], 'HorizontalAlignment', 'center', ... % Centered
+        'FontSize', 30, 'FontWeight', 'bold', 'FontColor', primary, 'BackgroundColor', panel); % Primary color for emphasis
+    
     panelY = 20;
     panelH = figH - topH - (2 * panelY);
     leftW = 300;
@@ -51,10 +43,7 @@ function india_twin_builder_app()
                           'BackgroundColor', panel, 'BorderType', 'none');
     rightPanel = uipanel(fig, 'Position', [rightX panelY rightW panelH], ...
                          'BackgroundColor', panel, 'BorderType', 'none');
-    % ---------------------------
-    % LEFT PANEL content
-    % ---------------------------
-    % Import button
+    
     importBtn = uibutton(leftPanel, 'push', 'Text', 'Import map', ...
         'Position', [20 panelH-84 260 64], 'FontSize', 20, 'FontWeight', 'normal');
     importBtn.BackgroundColor = primary; importBtn.FontColor = black;
@@ -114,54 +103,86 @@ function india_twin_builder_app()
                          'RowName', {}, 'Data', []);
     assetTable.BackgroundColor = panel;
     assetTable.ForegroundColor = white;
-    % ---------------------------
-    % RIGHT Panel content
-    % ---------------------------
-    simLabel = uilabel(rightPanel, 'Text', 'Simulation', 'Position', [20 panelH-50 220 36], 'FontSize', 22, 'FontWeight', 'bold', 'FontColor', white);
-    lblTime = uilabel(rightPanel, 'Text', 'Time of day', 'Position', [20 panelH-90 120 22], 'FontSize', 16, 'FontColor', white);
-    ddTime = uidropdown(rightPanel, 'Items', {'Day','Dawn','Night'}, 'Value', 'Day', 'Position', [20 panelH-130 220 36], 'BackgroundColor', panel, 'FontColor', white);
-    lblWeather = uilabel(rightPanel, 'Text', 'Weather', 'Position', [20 panelH-168 120 22], 'FontSize', 16, 'FontColor', white);
-    ddWeather = uidropdown(rightPanel, 'Items', {'Clear','Rain','Fog'}, 'Value', 'Clear', 'Position', [20 panelH-208 220 36], 'BackgroundColor', panel, 'FontColor', white);
+   
     
-    % NEW: Add a new button for custom scenario
+    % Common dimensions
+    BTN_W = 220;
+    BTN_H = 48;
+    BTN_X = 20;
+    LABEL_H = 22;
+    DD_H = 36;
+    REGULAR_GAP = 24; % Gap for labels/dropdowns
+    BUTTON_GAP = 36; % Increased gap for buttons (was 24)
+
+    % 1. Simulation Heading (Fixed at the top)
+    simLabel = uilabel(rightPanel, 'Text', 'Simulation', ...
+        'Position', [BTN_X panelH-50 BTN_W 36], 'FontSize', 22, 'FontWeight', 'bold', 'FontColor', white);
+    
+    % Current Y position, starting after the Simulation label (36px height) and a small gap (10px)
+    currentY = panelH - 50 - 36 - 10; % REDUCED GAP (10)
+
+    % 2. Time of day (Label + Dropdown)
+    y_lblTime = currentY - LABEL_H;
+    lblTime = uilabel(rightPanel, 'Text', 'Time of day', ...
+        'Position', [BTN_X y_lblTime BTN_W LABEL_H], 'FontSize', 16, 'FontColor', white);
+    
+    currentY = y_lblTime - REGULAR_GAP;
+
+    y_ddTime = currentY - DD_H;
+    ddTime = uidropdown(rightPanel, 'Items', {'Day','Dawn','Night'}, 'Value', 'Day', ...
+        'Position', [BTN_X y_ddTime BTN_W DD_H], 'BackgroundColor', panel, 'FontColor', white);
+
+    currentY = y_ddTime - REGULAR_GAP;
+
+    % 3. Weather (Label + Dropdown)
+    y_lblWeather = currentY - LABEL_H;
+    lblWeather = uilabel(rightPanel, 'Text', 'Weather', ...
+        'Position', [BTN_X y_lblWeather BTN_W LABEL_H], 'FontSize', 16, 'FontColor', white);
+
+    currentY = y_lblWeather - REGULAR_GAP;
+    
+    y_ddWeather = currentY - DD_H;
+    ddWeather = uidropdown(rightPanel, 'Items', {'Clear','Rain','Fog'}, 'Value', 'Clear', ...
+        'Position', [BTN_X y_ddWeather BTN_W DD_H], 'BackgroundColor', panel, 'FontColor', white);
+
+    currentY = y_ddWeather - BUTTON_GAP; % INCREASED GAP (36) before first button
+
+    % 4. Create Custom Scenario (Button)
+    y_createScenarioBtn = currentY - BTN_H;
     createScenarioBtn = uibutton(rightPanel, 'push', 'Text', 'Create Custom Scenario', ...
-        'Position', [20 panelH-285 220 48], 'FontSize', 17);
+        'Position', [BTN_X y_createScenarioBtn BTN_W BTN_H], 'FontSize', 17);
     createScenarioBtn.BackgroundColor = accent; 
     createScenarioBtn.FontColor = black;
     createScenarioBtn.ButtonPushedFcn = @(s,e) onCreateCustomScenario(fig);
-    % lblFidelity and ddFidelity are removed as per request.
-    % New Sections for future use
-    lblSettings = uilabel(rightPanel, 'Text', 'Settings', 'Position', [20 panelH-324 120 22], 'FontSize', 16, 'FontColor', white);
-    settingsPanel = uipanel(rightPanel, 'Position', [20 panelH-390 220 60], 'BackgroundColor', panel, 'BorderType', 'none');
-  % -- UI and label change as requested --
-settingsBtn = uibutton(settingsPanel, 'push', ...
-    'Text', 'Import Video', ...
-    'Position', [10 10 200 40], ...
-    'FontSize', 17, ...
-    'ButtonPushedFcn', @(s,e) onImportVideo(fig, logArea));
-settingsBtn.BackgroundColor = accent; 
-settingsBtn.FontColor = black;
-lblBatch = uilabel(rightPanel, 'Text', 'Batch Operations', 'Position', [20 panelH-420 200 22], 'FontSize', 16, 'FontColor', white);
-batchPanel = uipanel(rightPanel, ...
-    'Position', [20 panelH-490 220 60], ...
-    'BackgroundColor', panel, ...
-    'BorderType', 'none');
-   % -- UI and label change as requested --
-batchBtn = uibutton(batchPanel, 'push', ...
-    'Text', 'Import Photo', ...
-    'Position', [10 10 200 40], ...
-    'FontSize', 17, ...
-    'ButtonPushedFcn', @(s,e) onImportPhoto(fig, logArea));
-batchBtn.BackgroundColor = accent; 
-batchBtn.FontColor = black;
-    expBtn = uibutton(rightPanel, 'push', 'Text', 'Export to RoadRunner', 'Position', [20 112 220 48], 'FontSize', 17);
+
+    currentY = y_createScenarioBtn - BUTTON_GAP; % INCREASED GAP (36) after first button
+
+    % 5. Import Photo (Button)
+    y_importPhotoBtn = currentY - BTN_H;
+    importPhotoBtn = uibutton(rightPanel, 'push', 'Text', 'Import Photo', ...
+        'Position', [BTN_X y_importPhotoBtn BTN_W BTN_H], 'FontSize', 17, ...
+        'ButtonPushedFcn', @(s,e) onImportPhoto(fig, logArea));
+    importPhotoBtn.BackgroundColor = accent; 
+    importPhotoBtn.FontColor = black;
+
+    currentY = y_importPhotoBtn - BUTTON_GAP; % INCREASED GAP (36) after second button
+
+    % 6. Export to RoadRunner (Button)
+    y_expBtn = currentY - BTN_H;
+    expBtn = uibutton(rightPanel, 'push', 'Text', 'Export to RoadRunner', ...
+        'Position', [BTN_X y_expBtn BTN_W BTN_H], 'FontSize', 17);
     expBtn.BackgroundColor = primary; expBtn.FontColor = black;
-    runBtn = uibutton(rightPanel, 'push', 'Text', 'Run RoadRunner', 'Position', [20 42 220 48], 'FontSize', 17);
+    expBtn.ButtonPushedFcn = @(s,e) onExport(fig);
+
+    currentY = y_expBtn - BUTTON_GAP; % INCREASED GAP (36) after third button
+
+    % 7. Run RoadRunner (Button)
+    y_runBtn = currentY - BTN_H;
+    runBtn = uibutton(rightPanel, 'push', 'Text', 'Run RoadRunner', ...
+        'Position', [BTN_X y_runBtn BTN_W BTN_H], 'FontSize', 17);
     runBtn.BackgroundColor = primary; runBtn.FontColor = black;
-    % ---------------------------
-    % Attach callbacks
-    % ---------------------------
-    % store handles in appdata
+    runBtn.ButtonPushedFcn = @(s,e) onRun(fig);
+    
     appdata.ax = ax; 
     appdata.logArea = logArea; 
     appdata.assetTable = assetTable;
@@ -172,19 +193,14 @@ batchBtn.FontColor = black;
     setappdata(fig, 'AppData', appdata);
     importBtn.ButtonPushedFcn = @(s,e) onImport(fig);
     addAssetBtn.ButtonPushedFcn = @(s,e) onAddAsset(fig, assetList);
-    expBtn.ButtonPushedFcn    = @(s,e) onExport(fig);
-    runBtn.ButtonPushedFcn    = @(s,e) onRun(fig);
     
     % Final UI setup and log update
     appendLog(logArea, 'UI ready. Use Import scenario or Batch add to populate preview.');
     
-    % NOTE: The file-based population logic is now removed.
+    % The file-based population logic is now removed.
     ddScenes.Value = predefinedTemplates{1};
 end
 
-% ---------------------------
-% NEW CALLBACK FOR ASSETS
-% ---------------------------
 function onAssetSelected(fig, event)
     appdata = getappdata(fig, 'AppData');
     logArea = appdata.logArea;
@@ -246,39 +262,7 @@ function onAssetSelected(fig, event)
     
     popFig.Visible = 'on';
 end
-%import video___________
-function onImportVideo(fig, logArea)
-    [file, path] = uigetfile({'*.mp4;*.avi;*.mov;*.mkv', 'Video Files (*.mp4, *.avi, *.mov, *.mkv)'}, ...
-                              'Select a Video');
-    if isequal(file, 0)
-        appendLog(logArea, 'Video import cancelled.');
-        return;
-    end
-    fullPath = fullfile(path, file);
-    appendLog(logArea, ['Video imported: ' fullPath]);
-    try
-        % Create a new panel inside your app to show video
-        videoPanel = uipanel(fig, ...
-            'Title', 'Imported Video', ...
-            'Position', [100 100 480 360]);  % adjust as needed
-        % Use MATLAB's VideoReader to play the video
-        v = VideoReader(fullPath);
-        ax = uiaxes(videoPanel, 'Position', [10 10 460 320]);
-        
-        % Play first frame
-        frame = readFrame(v);
-        imshow(frame, 'Parent', ax);
-        % Optional: simple playback loop
-        while hasFrame(v)
-            frame = readFrame(v);
-            imshow(frame, 'Parent', ax);
-            pause(1/v.FrameRate); % match playback speed
-        end
-    catch ME
-        appendLog(logArea, ['Error displaying video: ' ME.message]);
-    end
-end
-%____________import photo
+
 function onImportPhoto(fig, logArea)
     [file, path] = uigetfile({'*.jpg;*.jpeg;*.png;*.bmp', 'Image Files (*.jpg, *.jpeg, *.png, *.bmp)'}, ...
                               'Select a Photo');
@@ -305,6 +289,7 @@ function onImportPhoto(fig, logArea)
         appendLog(logArea, ['Error displaying image: ' ME.message]);
     end
 end
+
 % Helper function to center a figure
 function centerfig(fig)
     scr_sz = get(0, 'ScreenSize');
@@ -501,7 +486,7 @@ function onSceneSelected(fig, event)
     appendLog(logArea, ['Calling Python backend to load scene: ' selectedSceneFile]);
     
     try
-        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
+        pythonScriptPath = 'C:\ILoveCoding\SimuTwin\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -688,7 +673,7 @@ function onExport(fig)
     drawnow;
     
     try
-        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
+        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -741,7 +726,7 @@ function onRun(fig)
     drawnow;
 
     try
-        pythonScriptPath = 'C:\codes\SIH\kyaMATLAB';
+        pythonScriptPath = 'C:\ILoveCoding\kyaMATLAB\kyaMATLAB';
         if count(py.sys.path, pythonScriptPath) == 0
             insert(py.sys.path, int64(0), pythonScriptPath);
         end
@@ -779,12 +764,6 @@ function onRun(fig)
     end
 end
 
-% ---------------------------
-% NEW CALLBACK FOR CUSTOM SCENARIO
-% ---------------------------
-% ---------------------------
-% NEW CALLBACK FOR CUSTOM SCENARIO
-% ---------------------------
 function onCreateCustomScenario(fig)
     appdata = getappdata(fig, 'AppData');
     logArea = appdata.logArea;
@@ -808,8 +787,6 @@ function onCreateCustomScenario(fig)
     % Main panel for the pop-up
     popPanel = uipanel(popFig, 'Position', [10 10 430 430], 'BorderType', 'none', 'BackgroundColor', panel);
 
-    % --- UI Elements for the Pop-up ---
-    % Scene Dropdown
     uilabel(popPanel, 'Text', 'Select Scene:', 'Position', [20 380 120 22], 'FontColor', grayTxt, 'FontSize', 14);
     ddScene = uidropdown(popPanel, 'Items', predefinedScenes, 'Position', [150 380 250 28], 'BackgroundColor', panel, 'FontColor', grayTxt);
 
@@ -844,7 +821,7 @@ function onCreateCustomScenario(fig)
 
 end
 
-% NEW CALLBACK: Handles the "Generate Scenario" button press
+% Handles the "Generate Scenario" button press
 function onGenerateScenario(popFig, ddScene, sldTwoWheeler, sldRickshaw, sldBus, sldCar, ddBehavior, efPothole)
     
     selectedScene = ddScene.Value;

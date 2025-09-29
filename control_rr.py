@@ -38,15 +38,13 @@ def launch_roadrunner():
     
     # Use your specific executable name
     rr_exe_path = r"C:\Program Files\RoadRunner R2025a\bin\win64\AppRoadRunner.exe"
-    project_path = r"C:\codes\SIH\kyaMATLAB"
+    project_path = r"C:\ILoveCoding\kyaMATLAB\kyaMATLAB"
     api_port = "54321"
-    
+
     if not os.path.exists(rr_exe_path):
         return False, "RoadRunner executable not found. Please check the path."
         
     try:
-        # We use Popen with the correct command-line arguments found by you.
-        # This will launch the GUI and start the gRPC server.
         subprocess.Popen([rr_exe_path, "--projectPath", project_path, "--apiPort", api_port])
         
         # Give the application time to start up and listen for gRPC calls
@@ -146,7 +144,7 @@ def export_to_roadrunner(file_path):
     else:
         return False, f"Unsupported file type: {file_extension}"
 
-    # Step 2: Import the file (which is now guaranteed to be .xodr) into RoadRunner
+    # Import the file (which is now guaranteed to be .xodr) into RoadRunner
     print(f"Python Backend: Importing '{os.path.basename(file_to_import)}' into RoadRunner...")
     
     try:
