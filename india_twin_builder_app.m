@@ -167,6 +167,13 @@ function india_twin_builder_app()
     LABEL_H = 22;
     BUTTON_GAP = 36; 
 
+    % *** NEW SMALL BUTTON CONFIG ***
+    SMALL_BTN_W = 100;
+    SMALL_BTN_H = 36;
+    % X position for center alignment: BTN_X + (BTN_W / 2) - (SMALL_BTN_W / 2) = 30 + 110 - 50 = 90
+    SMALL_BTN_X = 150; 
+    % *******************************
+    
     % Current Y position, starting high up
     currentY = panelH - 50; 
 
@@ -200,8 +207,8 @@ function india_twin_builder_app()
 
     % 4. Prompt Section Label
     y_lblPrompt = currentY - LABEL_H;
-    lblPrompt = uilabel(rightPanel, 'Text', 'Enter Prompt', ...
-        'Position', [BTN_X y_lblPrompt BTN_W LABEL_H], 'FontSize', 14, 'FontColor', grayTxt);
+    lblPrompt = uilabel(rightPanel, 'Text', 'Generate with AI', ...
+        'Position', [BTN_X y_lblPrompt BTN_W LABEL_H], 'FontSize', 14, 'FontColor', white); % CHANGED: FontColor to white
     
     currentY = y_lblPrompt - 5; % Small gap
 
@@ -209,15 +216,15 @@ function india_twin_builder_app()
     promptH = 100;
     y_aiPromptArea = currentY - promptH;
     aiPromptArea = uitextarea(rightPanel, 'Position', [BTN_X y_aiPromptArea BTN_W promptH], ...
-                              'Editable', 'on', 'FontColor', white, 'Value', {'e.g. Add 3 aggressive rickshaws and 5 potholes to the map.'}, ...
+                              'Editable', 'on', 'FontColor', white, 'Value', {'Enter a prompt'}, ... % CHANGED: Placeholder case
                               'BackgroundColor', bg);
     
-    currentY = y_aiPromptArea - BUTTON_GAP; % Gap before generate button
+    currentY = y_aiPromptArea - 10; % Small gap (10px) before the small button
 
     % 6. Generate a Scenario Button (Renamed from Generative AI)
-    y_generativeAIBtn = currentY - BTN_H;
-    generativeAIBtn = uibutton(rightPanel, 'push', 'Text', 'Generate a Scenario', ...
-        'Position', [BTN_X y_generativeAIBtn BTN_W BTN_H], 'FontSize', 17);
+    y_generativeAIBtn = currentY - SMALL_BTN_H; % Use smaller height
+    generativeAIBtn = uibutton(rightPanel, 'push', 'Text', 'Generate', ...
+        'Position', [SMALL_BTN_X y_generativeAIBtn SMALL_BTN_W SMALL_BTN_H], 'FontSize', 15); % CHANGED: Used SMALL_BTN_X for center alignment
     generativeAIBtn.BackgroundColor = primary; 
     generativeAIBtn.FontColor = black;
     generativeAIBtn.ButtonPushedFcn = @(s,e) onGenerativeAI(fig); 
